@@ -9,7 +9,8 @@ namespace frp {
 namespace push {
 namespace implementation {
 
-template<typename T, typename F, typename Executor, typename Input, typename Container = std::vector<T>>
+template<typename T, typename F, typename Executor, typename Input,
+	typename Container = std::vector<T>>
 struct filter_generator_type {
 	typedef Container value_type;
 	typedef util::commit_storage_type<value_type, 1> commit_storage_type;
