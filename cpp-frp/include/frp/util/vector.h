@@ -8,11 +8,9 @@ namespace frp {
 namespace util {
 
 template<typename T, std::size_t N>
-std::vector<T> make_vector(std::array<T, N> &&array) {
-	std::vector<T> vector;
-	vector.reserve(N);
-	vector.assign(std::make_move_iterator(array.begin()), std::make_move_iterator(array.end()));
-	return vector;
+auto vector_from_array(std::array<T, N> &&array) {
+	return std::vector<T>(std::make_move_iterator(array.begin()),
+		std::make_move_iterator(array.end()));
 }
 
 } // namespace util

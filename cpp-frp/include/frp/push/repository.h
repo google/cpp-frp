@@ -83,7 +83,7 @@ struct repository_type {
 	explicit repository_type(
 		const std::shared_ptr<StorageT> &storage)
 		: storage(storage)
-		, callbacks(util::make_vector(util::invoke(util::observe_all(
+		, callbacks(util::vector_from_array(util::invoke(util::observe_all(
 			[storage, weak_storage = std::weak_ptr<StorageT>(storage)]() {
 		auto storage(weak_storage.lock());
 		if (storage) {
