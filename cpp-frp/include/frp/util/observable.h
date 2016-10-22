@@ -11,7 +11,7 @@ namespace util {
 struct observable_type {
 
 	typedef std::function<void()> callback_type;
-	typedef list_type<callback_type> callback_container_type;
+	typedef single_list_type<callback_type> callback_container_type;
 
 	struct reference_type {
 
@@ -23,7 +23,7 @@ struct observable_type {
 				: iterator(iterator), observable(observable) {}
 
 			~storage_type() {
-				observable.callbacks.erase(iterator);
+				observable.callbacks.erase(std::move(iterator));
 			}
 		};
 
@@ -33,7 +33,7 @@ struct observable_type {
 	template<typename F>
 	reference_type add_callback(F &&f) {
 		return { std::make_unique<reference_type::storage_type>(
-			callbacks.append(std::forward<F>(f)), *this) };
+			callbacks.insert(std::forward<F>(f)), *this) };
 	}
 
 	void update() const {

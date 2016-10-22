@@ -15,6 +15,6 @@ TEST(filter, test1) {
 		std::ref(map)));
 	auto values(future.get());
 	ASSERT_EQ(values.size(), 2);
-	ASSERT_EQ(values[0], 3);
-	ASSERT_EQ(values[1], 4);
+	ASSERT_NE(std::find(values.begin(), values.end(), 3), values.end());
+	ASSERT_NE(std::find(values.begin(), values.end(), 4), values.end());
 }

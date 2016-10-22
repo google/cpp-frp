@@ -2,7 +2,7 @@
 #define _FRP_UTIL_COLLECTOR_H_
 
 #include <atomic>
-#include <mutex>
+#include <frp/util/list.h>
 #include <vector>
 
 namespace frp {
@@ -11,33 +11,30 @@ namespace util {
 template<typename T, typename F>
 struct collector_type {
 	F f;
-	std::vector<T> vector;
+	single_list_type<T> list;
 	std::atomic_size_t counter;
-	std::mutex mutex;
+	const std::size_t num_elements;
 
 	collector_type(F &&f, std::size_t num_elements)
-		: f(std::forward<F>(f)), counter(num_elements) {
-		vector.reserve(num_elements);
-	}
+		: f(std::forward<F>(f)), counter(num_elements), num_elements(num_elements) {}
 
 	void append_and_call_if_ready(T &&value) {
-		{
-			std::lock_guard<std::mutex> lock(mutex);
-			vector.push_back(std::forward<T>(value));
-		}
+		list.insert(std::forward<T>(value));
 		decrease();
 	}
 
 	void append_and_call_if_ready(const T &value) {
-		{
-			std::lock_guard<std::mutex> lock(mutex);
-			vector.push_back(value);
-		}
+		list.insert(value);
 		decrease();
 	}
 
 	void decrease() {
 		if (--counter == 0) {
+			std::vector<T> vector;
+			vector.reserve(num_elements);
+			list.for_each([&](auto &value) {
+				vector.push_back(std::move(value));
+			});
 			f(std::move(vector));
 		}
 	}

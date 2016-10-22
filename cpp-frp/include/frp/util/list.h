@@ -1,36 +1,67 @@
 #ifndef _FRP_UTIL_LIST_H_
 #define _FRP_UTIL_LIST_H_
 
-#include <list>
-#include <mutex>
+#include <atomic>
+#include <memory>
 
 namespace frp {
 namespace util {
 
-// TODO(gardell): Use/create a lock-free list with the following interface
 template<typename T>
-struct list_type {
-	typedef std::list<T> internal_list_type;
-	typedef typename internal_list_type::iterator iterator;
-	internal_list_type list;
-	mutable std::mutex mutex;
+struct single_list_type {
+	struct node_type {
+		T value;
+		std::shared_ptr<node_type> next;
+	};
 
-	auto append(T &&value) {
-		std::lock_guard<std::mutex> lock(mutex);
-		return list.insert(list.end(), std::forward<T>(value));
-	}
+	struct iterator {
+		std::shared_ptr<node_type> node;
 
-	void erase(const iterator &iterator) {
-		std::lock_guard<std::mutex> lock(mutex);
-		list.erase(iterator);
-	}
+		T &operator*() const {
+			return node->value;
+		}
+
+		T *operator->() const {
+			return &node->value;
+		}
+	};
+
+	std::shared_ptr<node_type> head;
 
 	template<typename F>
 	void for_each(F &&f) const {
-		std::lock_guard<std::mutex> lock(mutex);
-		for (const auto &value : list) {
-			f(value);
+		for (auto node = std::atomic_load(&head); node; node = std::atomic_load(&node->next)) {
+			f(node->value);
 		}
+	}
+
+	auto insert(T &&value) {
+		auto node = std::make_shared<node_type>();
+		node->value = std::forward<T>(value);
+		node->next = std::atomic_load(&head);
+		while (!std::atomic_compare_exchange_weak(&head, &node->next, node)) {}
+		return iterator{ node };
+	}
+
+	auto insert(const T &value) {
+		auto node = std::make_shared<node_type>();
+		node->value = value;
+		node->next = std::atomic_load(&head);
+		while (!std::atomic_compare_exchange_weak(&head, &node->next, node)) {}
+		return iterator{ node };
+	}
+
+	bool erase(iterator &&iterator) {
+		auto &target(iterator.node);
+		if (std::atomic_compare_exchange_strong(&head, &target, target->next)) {
+			return true;
+		}
+		for (auto node = std::atomic_load(&head); node; node = std::atomic_load(&node->next)) {
+			if (std::atomic_compare_exchange_strong(&node->next, &target, target->next)) {
+				return true;
+			}
+		}
+		return false;
 	}
 };
 

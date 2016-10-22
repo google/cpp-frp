@@ -14,7 +14,7 @@ TEST(map, test1) {
 	auto result(frp::push::transform([&](auto values) { promise.set_value(values); },
 		std::ref(map)));
 	auto values(future.get());
-	ASSERT_EQ(values[0], "1");
-	ASSERT_EQ(values[1], "2");
-	ASSERT_EQ(values[2], "3");
+	ASSERT_NE(std::find(values.begin(), values.end(), "1"), values.end());
+	ASSERT_NE(std::find(values.begin(), values.end(), "2"), values.end());
+	ASSERT_NE(std::find(values.begin(), values.end(), "3"), values.end());
 }
