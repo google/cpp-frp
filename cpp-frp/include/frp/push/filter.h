@@ -9,9 +9,9 @@ namespace frp {
 namespace push {
 namespace implementation {
 
-template<typename T, typename F, typename Executor, typename Input>
+template<typename T, typename F, typename Executor, typename Input, typename Container = std::vector<T>>
 struct filter_generator_type {
-	typedef std::vector<T> value_type;
+	typedef Container value_type;
 	typedef util::commit_storage_type<value_type, 1> commit_storage_type;
 	typedef typename commit_storage_type::revisions_type revisions_type;
 
@@ -22,8 +22,8 @@ struct filter_generator_type {
 	void operator()(CallbackT &&callback, revisions_type &revisions,
 		const std::shared_ptr<util::storage_type<Input>> & storage) const {
 		auto collector(util::make_collector_type<T>(
-			[callback = std::forward<CallbackT>(callback), revisions](value_type &&vector) {
-			callback(std::make_shared<commit_storage_type>(std::forward<value_type>(vector),
+			[callback = std::forward<CallbackT>(callback), revisions](value_type &&value) {
+			callback(std::make_shared<commit_storage_type>(std::forward<value_type>(value),
 				util::default_revision, revisions));
 		},
 			storage->value.size()));
