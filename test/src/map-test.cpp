@@ -1,3 +1,4 @@
+#include <array_util.h>
 #include <frp/push/map.h>
 #include <frp/push/transform.h>
 #include <future>
@@ -7,7 +8,7 @@
 
 TEST(map, test1) {
 	auto map(frp::push::map([](auto i) { return std::to_string(i); },
-		frp::push::transform([]() { return std::array<int, 3>{ 1, 2, 3 }; })));
+		frp::push::transform([]() { return make_array(1, 2, 3, 4); })));
 
 	std::promise<std::vector<std::string>> promise;
 	auto future = promise.get_future();
