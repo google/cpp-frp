@@ -57,5 +57,14 @@
     <ClInclude Include="include\frp\util\list.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
+    <ClInclude Include="include\frp\push\map.h">
+      <Filter>Header Files\push</Filter>
+    </ClInclude>
+    <ClInclude Include="include\frp\util\collector.h">
+      <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\frp\push\filter.h">
+      <Filter>Header Files\push</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

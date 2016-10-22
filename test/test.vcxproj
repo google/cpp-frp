@@ -162,6 +162,8 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\filter-test.cpp" />
+    <ClCompile Include="src\map-test.cpp" />
     <ClCompile Include="src\transform-test.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
