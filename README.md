@@ -14,7 +14,7 @@ auto squared = transform(
 	std::ref(base), std::ref(exponent));
 
 auto random_sequence = transform([](auto i) {
-		std::vector<int> v(i);
+		std::vector<int> v(std::size_t(i));
 	    std::generate(v.begin(), v.end(), std::rand);
 	    return v;
     }, std::ref(squared));
@@ -41,7 +41,7 @@ The above example executes the lambda expressions on the current thread, to set 
 
 executor_type executor;
 
-auto receiver = transform(execute_on(executor, [](auto i){}, std::ref(provider));
+auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider));
 ```
 
 ## Type requirements
