@@ -45,23 +45,22 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 ```
 
 ## Type requirements
-
+### Value types
 The value types used with the operators should be *copyable* and implement the comparator ```auto T::operator==(const T &) const``` or equivalent.
 
-----------
+### Function types
 Functions should implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well. (**Double check this!**)
 
 Functions can return ```void``` for ```transform```, the function will be executed on any dependency changes but the resulting repository becomes a leaf-node and can not be used by any other repository.
 
-### Thread safety
+#### Thread safety
 Functions are expected to have **no side-effects** and only operate on their input arguments. That said, in order to interface with other code that might be a too strict requirement. This library uses atomics to synchronize logic, which means that in theory, at any point, there might be multiple invocations of your function running in parallell.
 
 There are two ways to manage functions with side effects:
  - Specify a single threaded executor with ```execute_on(...)```. This way the execution of your function will be serialized.
  - Use atomics or locks to protect your data. This way you can write thread-safe code while still leveraging multi-thread performance.
 
-----------
-
+### Executor types
 Executor types should have a signature equivalent to:
 ```C++
 template<typename F>
