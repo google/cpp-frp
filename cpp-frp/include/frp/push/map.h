@@ -22,17 +22,22 @@ struct map_generator_type {
 	template<typename CallbackT>
 	void operator()(CallbackT &&callback, revisions_type &revisions,
 		const std::shared_ptr<util::storage_type<Input>> & storage) const {
-		auto collector(util::make_collector_type<T>(
-			[callback = std::forward<CallbackT>(callback), revisions](value_type &&value) {
-				callback(std::make_shared<commit_storage_type>(std::forward<value_type>(value),
-					util::default_revision, revisions));
-			},
-			storage->value.size()));
-		for (const auto &value : storage->value) {
-			// explicit capture of storage to keep shared_ptr alive.
-			executor([this, storage, &value, collector]() {
-				collector->append_and_call_if_ready(function(value));
-			});
+		if (storage->value.empty()) {
+			callback(std::make_shared<commit_storage_type>(value_type(),
+				util::default_revision, revisions));
+		} else {
+			auto collector(util::make_collector_type<T>(
+				[callback = std::forward<CallbackT>(callback), revisions](value_type &&value) {
+					callback(std::make_shared<commit_storage_type>(std::forward<value_type>(value),
+						util::default_revision, revisions));
+				},
+				storage->value.size()));
+			for (const auto &value : storage->value) {
+				// explicit capture of storage to keep shared_ptr alive.
+				executor([this, storage, &value, collector]() {
+					collector->append_and_call_if_ready(function(value));
+				});
+			}
 		}
 	}
 

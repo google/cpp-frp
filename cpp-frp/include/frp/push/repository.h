@@ -34,7 +34,7 @@ struct repository_type {
 			return std::atomic_load(&value);
 		}
 
-		void update() {
+		void evaluate() {
 			unwrap_and_update(std::make_index_sequence<dependencies_size>{});
 		}
 
@@ -55,10 +55,12 @@ struct repository_type {
 						auto value(std::atomic_load(&storage->value));
 						do {
 							commit->revision = (value ? value->revision : util::default_revision) + 1;
-						} while ((!value || (value->is_newer(revisions)
-							&& !commit->compare_value(*value)))
-							&& !std::atomic_compare_exchange_weak(&storage->value, &value,
-								commit));
+							if (value && (!value->is_newer(revisions) || commit->compare_value(*value))) {
+								return;
+							}
+						} while (!std::atomic_compare_exchange_strong(&storage->value, &value,
+							commit));
+						storage->update();
 					}, revisions, values...);
 				}
 			}
@@ -87,10 +89,10 @@ struct repository_type {
 			[storage, weak_storage = std::weak_ptr<StorageT>(storage)]() {
 		auto storage(weak_storage.lock());
 		if (storage) {
-			storage->update();
+			storage->evaluate();
 		}
 	}), std::move(storage->dependencies)))) {
-		storage->update();
+		storage->evaluate();
 	}
 
 	auto get() const {

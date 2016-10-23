@@ -8,7 +8,7 @@
 namespace frp {
 namespace util {
 
-template<typename T, typename F>
+template<typename T, typename F, typename Container = std::vector<T>>
 struct collector_type {
 	F f;
 	single_list_type<T> list;
@@ -30,12 +30,12 @@ struct collector_type {
 
 	void decrease() {
 		if (--counter == 0) {
-			std::vector<T> vector;
-			vector.reserve(num_elements);
+			Container container;
+			container.reserve(num_elements);
 			list.for_each([&](auto &value) {
-				vector.push_back(std::move(value));
+				container.push_back(std::move(value));
 			});
-			f(std::move(vector));
+			f(std::move(container));
 		}
 	}
 };
