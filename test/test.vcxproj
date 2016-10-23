@@ -162,6 +162,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\example-test.cpp" />
     <ClCompile Include="src\filter-test.cpp" />
     <ClCompile Include="src\map-test.cpp" />
     <ClCompile Include="src\transform-test.cpp" />

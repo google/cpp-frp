@@ -30,7 +30,7 @@ struct mutable_repository_type {
 		auto current = get();
 		do {
 			replacement->revision = current->revision + 1;
-		} while ((!current || !current->compare_value(replacement))
+		} while ((!current || !current->compare_value(*replacement))
 			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement));
 		storage->update();
 	}

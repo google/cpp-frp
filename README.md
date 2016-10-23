@@ -10,29 +10,28 @@ auto base = variable(5);
 auto exponent = variable(2);
 
 auto squared = transform(
-	[](auto base, auto exponent){ return pow(base, exponent); },
+	[](auto base, auto exponent) { return pow(base, exponent); },
 	std::ref(base), std::ref(exponent));
 
 auto random_sequence = transform([](auto i) {
-		std::vector<int> v(std::size_t(i));
-	    std::generate(v.begin(), v.end(), std::rand);
-	    return v;
-    }, std::ref(squared));
+	auto v = std::vector<int>(std::size_t(i));
+	std::generate(v.begin(), v.end(), std::rand);
+	return v;
+}, std::ref(squared));
 
 auto filtered = filter([](auto i) { return i % 2; }, std::ref(random_sequence));
 
 auto strings = map([](auto i) { return std::to_string(i); }, std::ref(filtered));
 
 auto print = transform([](auto strings) {
-		std::copy(std::begin(strings), std::end(strings),
-			std::ostream_iterator<std::string>(std::cout, " "))
-	}, std::ref(strings));
+	std::copy(std::begin(strings), std::end(strings),
+		std::ostream_iterator<std::string>(std::cout, " "));
+}, std::ref(strings));
 
 // Update base and exponent repositories with new values.
 // changes will propagate through the graph where necessary.
 base = 6;
 exponent = 3;
-
 ```
 
 The above example executes the lambda expressions on the current thread, to set an executor to use:
