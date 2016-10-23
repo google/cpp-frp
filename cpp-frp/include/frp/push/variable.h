@@ -25,13 +25,18 @@ struct mutable_repository_type {
 	};
 
 	auto operator=(T &&value) const {
-		auto replacement = std::make_shared<util::storage_type<T>>(std::forward<T>(value));
+		modify([value = std::forward<T>(value)](auto previous) {return value; });
+	}
 
+	template<typename F>
+	void modify(F &&f) const {
 		auto current = get();
-		do {
+		auto replacement(std::make_shared<util::storage_type<T>>(f(current->value),
+			current->revision + 1));
+		while ((!current || !current->compare_value(*replacement))
+			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement)) {
 			replacement->revision = current->revision + 1;
-		} while ((!current || !current->compare_value(*replacement))
-			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement));
+		}
 		storage->update();
 	}
 

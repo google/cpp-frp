@@ -14,7 +14,7 @@ constexpr revision_type default_revision = 0;
 
 template<typename T>
 struct storage_type {
-	const T value;
+	T value;
 	revision_type revision;
 
 	storage_type(T &&value, revision_type revision = default_revision)
