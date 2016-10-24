@@ -4,6 +4,7 @@
 #include <frp/util/observable.h>
 #include <frp/util/storage.h>
 #include <memory>
+#include <stdexcept>
 
 namespace frp {
 namespace push {
@@ -15,11 +16,12 @@ struct source_repository_type {
 
 	explicit source_repository_type(T &&value)
 		: storage(std::make_unique<storage_type>(std::forward<T>(value))) {}
+	source_repository_type() : storage(std::make_unique<storage_type>()) {}
 
 	struct storage_type : util::observable_type {
-		explicit storage_type(T &&value)
-			: value(std::make_shared<util::storage_type<T>>(std::forward<T>(value),
-				util::default_revision)) {}
+		storage_type() = default;
+		explicit storage_type(T &&value) : value(std::make_shared<util::storage_type<T>>(
+			std::forward<T>(value), util::default_revision)) {}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
 	};
@@ -34,14 +36,23 @@ struct source_repository_type {
 		return *this;
 	}
 
+	operator bool() const {
+		return !!get();
+	}
+
 	auto operator*() const {
-		return get()->value;
+		auto storage(get());
+		if (!storage) {
+			throw std::domain_error("value not available");
+		} else {
+			return storage->value;
+		}
 	}
 
 	void accept(std::shared_ptr<util::storage_type<T>> &&replacement) const {
 		auto current = get();
 		do {
-			replacement->revision = current->revision + 1;
+			replacement->revision = (current ? current->revision : util::default_revision) + 1;
 		} while ((!current || !current->compare_value(*replacement))
 			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement));
 		storage->update();
@@ -58,6 +69,11 @@ struct source_repository_type {
 
 	std::unique_ptr<storage_type> storage;
 };
+
+template<typename T>
+auto source() {
+	return source_repository_type<T>();
+}
 
 template<typename T>
 auto source(T &&value) {
