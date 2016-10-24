@@ -45,12 +45,15 @@ struct map_generator_type {
 	Executor executor;
 };
 
+template<typename Function, typename Dependency>
+using map_return_type =
+	decltype((*(Function *)0)(*(typename util::unwrap_t<Dependency>::value_type::value_type *)0));
+
 }  // namespace implementation
 
 template<typename Function, typename Dependency>
 auto map(Function function, Dependency dependency) {
-	typedef decltype(internal::get_function(function)(
-		util::unwrap_reference(dependency).get()->value.front())) return_type;
+	typedef implementation::map_return_type<Function, Dependency> return_type;
 	typedef implementation::map_generator_type<return_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type> generator_type;
