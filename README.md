@@ -48,7 +48,7 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 
 ## Type requirements
 ### Value types
-The value types used with the operators must be *move constructible* and implement the comparator ```auto T::operator==(const T &)``` or equivalent.
+The value types used with the operators must be *move constructible* and implement the equality comparator ```auto T::operator==(const T &)``` or equivalent.
 Types used with ```sink``` must be *copy constructible* since its ```auto operator*()``` returns a copy of the stored value.
 
 ### Function types

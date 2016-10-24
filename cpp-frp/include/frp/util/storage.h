@@ -8,6 +8,13 @@
 namespace frp {
 namespace util {
 
+template<typename T, typename = bool>
+struct is_equality_comparable : std::false_type {};
+
+template<typename T>
+struct is_equality_comparable<T, decltype(std::declval<T&>() == std::declval<T&>())>
+	: std::true_type {};
+
 typedef uint64_t revision_type;
 
 constexpr revision_type default_revision = 0;
@@ -16,6 +23,9 @@ template<typename T>
 struct storage_type {
 	T value;
 	revision_type revision;
+
+	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
+	static_assert(is_equality_comparable<T>::value, "T must implement equality comparator");
 
 	storage_type(T &&value, revision_type revision = default_revision)
 		: value(std::forward<T>(value)), revision(revision) {}

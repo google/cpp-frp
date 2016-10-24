@@ -13,6 +13,8 @@ namespace push {
 template<typename T>
 struct sink_repository_type {
 
+	static_assert(std::is_copy_constructible<T>::value, "T must be copy constructible");
+
 	typedef T value_type;
 
 	struct storage_type {
