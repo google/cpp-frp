@@ -21,7 +21,8 @@ struct transform_generator_type {
 	void operator()(CallbackT &&callback, revisions_type &revisions,
 		const std::shared_ptr<util::storage_type<Ts>> &... storage) const {
 		executor([=, callback = std::move(callback)]() {
-			callback(commit_storage_type::make(std::bind(function, storage->value...), revisions));
+			callback(commit_storage_type::make(std::bind(function, std::ref(storage->value)...),
+				revisions));
 		});
 	}
 
@@ -31,7 +32,7 @@ struct transform_generator_type {
 
 template<typename Function, typename... Dependencies>
 using transform_return_type =
-	decltype((*(Function *)0)(*((typename util::unwrap_t<Dependencies>::value_type *)0)...));
+	decltype((*(Function *)0)(*((typename util::unwrap_t<Dependencies>::value_type*)0)...));
 
 }  // namespace implementation
 

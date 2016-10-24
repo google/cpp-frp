@@ -6,8 +6,8 @@ cpp-frp is a modern multi-threaded lock-free header-only library written in stan
 The library contains basic `transform`, `map` and `filter` functionality as shown below:
 
 ```C++
-auto base = variable(5);
-auto exponent = variable(2);
+auto base = source(5);
+auto exponent = source(2);
 
 auto squared = transform(
 	[](auto base, auto exponent) { return pow(base, exponent); },
@@ -23,10 +23,13 @@ auto filtered = filter([](auto i) { return i % 2; }, std::ref(random_sequence));
 
 auto strings = map([](auto i) { return std::to_string(i); }, std::ref(filtered));
 
-auto print = transform([](auto strings) {
-	std::copy(std::begin(strings), std::end(strings),
-		std::ostream_iterator<std::string>(std::cout, " "));
-}, std::ref(strings));
+auto print = sink(std::ref(strings));
+
+// read the content of print
+for (auto value : *print) {
+	std::cout << value << " ";
+}
+std::cout << std::endl;
 
 // Update base and exponent repositories with new values.
 // changes will propagate through the graph where necessary.
@@ -45,7 +48,8 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 
 ## Type requirements
 ### Value types
-The value types used with the operators must be *copyable* and implement the comparator ```auto T::operator==(const T &)``` or equivalent.
+The value types used with the operators must be *move constructible* and implement the comparator ```auto T::operator==(const T &)``` or equivalent.
+Types used with ```sink``` must be *copy constructible* since its ```auto operator*()``` returns a copy of the stored value.
 
 ### Function types
 Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well. (**Double check this!**)

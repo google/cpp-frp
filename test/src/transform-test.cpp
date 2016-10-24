@@ -1,3 +1,4 @@
+#include <frp/push/sink.h>
 #include <frp/push/source.h>
 #include <frp/push/transform.h>
 #include <future>
@@ -99,4 +100,42 @@ TEST(repo, mutable_repository) {
 
 	ASSERT_EQ(future_a.get(), 15);
 	ASSERT_EQ(future_b.get(), 10);
+}
+
+struct A {
+	A(int i) : i(i) {}
+	A(const A &) = delete;
+	A(A &&) = default;
+	A &operator=(const A &) = delete;
+	A &operator=(A &&) = default;
+	auto operator==(const A &a) const {
+		return i == a.i;
+	}
+	int i;
+};
+
+TEST(transform, movable) {
+	auto source(frp::push::source<A>());
+	auto transform(frp::push::transform([](auto &v) {}, std::ref(source)));
+	source = A(5);
+}
+
+int foo(short a, char b) {
+	return int(a) * b;
+}
+
+TEST(transform, function_ptr) {
+	auto source1(frp::push::source(short(13)));
+	auto source2(frp::push::source(char(42)));
+	auto result(frp::push::transform(&foo, std::ref(source1), std::ref(source2)));
+	auto sink(frp::push::sink(std::ref(result)));
+	ASSERT_EQ(*sink, 42 * 13);
+}
+
+TEST(transform, bind) {
+	auto source(frp::push::source(char(42)));
+	auto result(frp::push::transform(std::bind(&foo, short(5), std::placeholders::_1),
+		std::ref(source)));
+	auto sink(frp::push::sink(std::ref(result)));
+	ASSERT_EQ(*sink, 42 * 5);
 }
