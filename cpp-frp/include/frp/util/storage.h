@@ -20,6 +20,9 @@ struct storage_type {
 	storage_type(T &&value, revision_type revision = default_revision)
 		: value(std::forward<T>(value)), revision(revision) {}
 
+	storage_type(const T &value, revision_type revision = default_revision)
+		: value(value), revision(revision) {}
+
 	auto compare_value(storage_type &storage) const {
 		return value == storage.value;
 	}

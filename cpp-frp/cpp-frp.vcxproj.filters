@@ -51,9 +51,6 @@
     <ClInclude Include="include\frp\util\observable.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
-    <ClInclude Include="include\frp\push\variable.h">
-      <Filter>Header Files\push</Filter>
-    </ClInclude>
     <ClInclude Include="include\frp\util\list.h">
       <Filter>Header Files\util</Filter>
     </ClInclude>
@@ -71,6 +68,9 @@
     </ClInclude>
     <ClInclude Include="include\frp\util\task_queue.h">
       <Filter>Header Files\util</Filter>
+    </ClInclude>
+    <ClInclude Include="include\frp\push\source.h">
+      <Filter>Header Files\push</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

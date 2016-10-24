@@ -1,5 +1,5 @@
-#ifndef _FRP_PUSH_VARIABLE_H_
-#define _FRP_PUSH_VARIABLE_H_
+#ifndef _FRP_PUSH_SOURCE_H_
+#define _FRP_PUSH_SOURCE_H_
 
 #include <frp/util/observable.h>
 #include <frp/util/storage.h>
@@ -9,11 +9,11 @@ namespace frp {
 namespace push {
 
 template<typename T>
-struct mutable_repository_type {
+struct source_repository_type {
 
 	typedef T value_type;
 
-	explicit mutable_repository_type(T &&value)
+	explicit source_repository_type(T &&value)
 		: storage(std::make_unique<storage_type>(std::forward<T>(value))) {}
 
 	struct storage_type : util::observable_type {
@@ -24,19 +24,26 @@ struct mutable_repository_type {
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
 	};
 
-	auto operator=(T &&value) const {
-		modify([value = std::forward<T>(value)](auto previous) {return value; });
+	auto &operator=(T &&value) const {
+		accept((std::make_shared<util::storage_type<T>>(std::forward<T>(value))));
+		return *this;
 	}
 
-	template<typename F>
-	void modify(F &&f) const {
+	auto &operator=(const T &value) const {
+		accept(std::make_shared<util::storage_type<T>>(value));
+		return *this;
+	}
+
+	auto operator*() const {
+		return get()->value;
+	}
+
+	void accept(std::shared_ptr<util::storage_type<T>> &&replacement) const {
 		auto current = get();
-		auto replacement(std::make_shared<util::storage_type<T>>(f(current->value),
-			current->revision + 1));
-		while ((!current || !current->compare_value(*replacement))
-			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement)) {
+		do {
 			replacement->revision = current->revision + 1;
-		}
+		} while ((!current || !current->compare_value(*replacement))
+			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement));
 		storage->update();
 	}
 
@@ -53,11 +60,11 @@ struct mutable_repository_type {
 };
 
 template<typename T>
-mutable_repository_type<T> variable(T &&value) {
-	return mutable_repository_type<T>(std::forward<T>(value));
+auto source(T &&value) {
+	return source_repository_type<T>(std::forward<T>(value));
 }
 
 } // namespace push
 } // namespace frp
 
-#endif // _FRP_PUSH_VARIABLE_H_
+#endif // _FRP_PUSH_SOURCE_H_

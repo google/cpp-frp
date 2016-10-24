@@ -1,8 +1,8 @@
 #include <atomic>
 #include <cache.h>
 #include <frp/push/map.h>
+#include <frp/push/source.h>
 #include <frp/push/transform.h>
-#include <frp/push/variable.h>
 #include <geometry.h>
 #include <cstdlib>
 #include <iostream>
@@ -138,7 +138,7 @@ int main(int argc, char *argv[]) {
 
 	typedef std::vector<std::shared_ptr<instance_type>> character_container_type;
 
-	auto character(frp::push::variable(std::make_shared<instance_type>(point_type{ 5, 5 },
+	auto character(frp::push::source(std::make_shared<instance_type>(point_type{ 5, 5 },
 		main_character)));
 
 	auto dynamic(frp::push::transform(
@@ -150,7 +150,7 @@ int main(int argc, char *argv[]) {
 	sink_type<std::shared_ptr<dynamic_body_type>> controller(
 		[](auto dynamic) {}, std::ref(dynamic));
 
-	auto arrows(frp::push::variable(std::vector<std::shared_ptr<instance_type>>()));
+	auto arrows(frp::push::source(std::vector<std::shared_ptr<instance_type>>()));
 
 	// TODO(gardell): This must be a cached map where we reuse previous instances so we don't reset the velocity.
 	auto dynamic_arrows(frp::push::map([](auto arrow) {
@@ -216,9 +216,9 @@ int main(int argc, char *argv[]) {
 					case SDLK_LCTRL:
 					case SDLK_RCTRL:
 					{
-						// TODO(gardell): Remove modify? Just one thread modifying arrows anyway
-						// could just instead provide a get method?
-						arrows.modify([&](auto arrows) { arrows.push_back(std::make_shared<instance_type>(controller.get()->character->position, main_character)); return arrows; });
+						auto temp(*arrows);
+						temp.push_back(std::make_shared<instance_type>(controller.get()->character->position, main_character));
+						arrows = temp;
 					}
 						break;
 					}

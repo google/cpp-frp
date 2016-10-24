@@ -1,15 +1,15 @@
 #include <algorithm>
 #include <frp/push/filter.h>
 #include <frp/push/map.h>
+#include <frp/push/source.h>
 #include <frp/push/transform.h>
-#include <frp/push/variable.h>
 #include <gtest/gtest.h>
 
 using namespace frp::push;
 
 TEST(example, example1) {
-	auto base = variable(5);
-	auto exponent = variable(2);
+	auto base = source(5);
+	auto exponent = source(2);
 
 	auto squared = transform(
 		[](auto base, auto exponent) { return pow(base, exponent); },

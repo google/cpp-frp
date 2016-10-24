@@ -22,7 +22,7 @@
     <ClInclude Include="include\frp\execute_on.h" />
     <ClInclude Include="include\frp\push\filter.h" />
     <ClInclude Include="include\frp\push\map.h" />
-    <ClInclude Include="include\frp\push\variable.h" />
+    <ClInclude Include="include\frp\push\source.h" />
     <ClInclude Include="include\frp\push\repository.h" />
     <ClInclude Include="include\frp\push\transform.h" />
     <ClInclude Include="include\frp\util\collector.h" />

@@ -1,4 +1,4 @@
-#include <frp/push/variable.h>
+#include <frp/push/source.h>
 #include <frp/push/transform.h>
 #include <future>
 #include <gtest/gtest.h>
@@ -83,7 +83,7 @@ TEST(repo, void_repository) {
 }
 
 TEST(repo, mutable_repository) {
-	auto repository_top(frp::push::variable(5));
+	auto repository_top(frp::push::source(5));
 	auto repository_a(frp::push::transform([](auto top) { return 3 * top; },
 		std::ref(repository_top)));
 	auto repository_b(frp::push::transform([](auto top) { return 2 * top; },
