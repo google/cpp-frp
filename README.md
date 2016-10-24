@@ -1,7 +1,7 @@
 # cpp-frp
-Functional reactive programming in C++
+Static functional reactive programming in C++
 
-cpp-frp is a modern multi-threaded lock-free header-only library written in standard C++14 (**or 11?**).
+cpp-frp is a modern multi-threaded lock-free type-safe header-only library written in standard C++14.
 
 The library contains basic `transform`, `map` and `filter` functionality as shown below:
 
@@ -27,7 +27,7 @@ auto print = sink(std::ref(strings));
 
 // read the content of print
 for (auto value : *print) {
-	std::cout << value << " ";
+       std::cout << value << " ";
 }
 std::cout << std::endl;
 
@@ -48,11 +48,14 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 
 ## Type requirements
 ### Value types
-The value types used with the operators must be *move constructible* and implement the equality comparator ```auto T::operator==(const T &)``` or equivalent.
-Types used with ```sink``` must be *copy constructible* since its ```auto operator*()``` returns a copy of the stored value.
+The requirements for value types are as follows:
+
+ - Must be *move constructible*
+  * If used with ```sink``` it must be *copy constructible*
+ - Implement the equality comparator ```auto T::operator==(const T &)``` or equivalent
 
 ### Function types
-Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well. (**Double check this!**)
+Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well.
 
 Functions can return ```void``` for ```transform```, the function will be executed on any dependency changes but the resulting repository becomes a leaf-node and can not be used by any other repository.
 
