@@ -31,16 +31,13 @@ struct repository_type {
 		}
 
 		void evaluate() {
-			unwrap_and_update(std::make_index_sequence<dependencies_size>{});
-		}
-
-		template<std::size_t... I>
-		void unwrap_and_update(std::index_sequence<I...>) {
-			update_impl(util::unwrap_reference(std::get<I>(dependencies)).get()...);
+			util::invoke([this](DependenciesT&... dependencies) {
+				evaluate_impl(util::unwrap_reference(dependencies).get()...);
+			}, std::ref(dependencies));
 		}
 
 		template<typename... Ts>
-		void update_impl(const std::shared_ptr<Ts> &... values) {
+		void evaluate_impl(const std::shared_ptr<Ts> &... values) {
 			if (util::all_true(values...)) {
 				std::array<util::revision_type, dependencies_size> revisions{
 					values->revision... };
@@ -87,7 +84,7 @@ struct repository_type {
 		if (storage) {
 			storage->evaluate();
 		}
-	}), std::move(storage->dependencies)))) {
+	}), std::ref(storage->dependencies)))) {
 		storage->evaluate();
 	}
 

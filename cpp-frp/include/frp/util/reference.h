@@ -26,7 +26,7 @@ struct unwrap_reference_type {
 
 template<typename T>
 struct unwrap_reference_type<std::reference_wrapper<T>> {
-	static T &get(std::reference_wrapper<T> &value) {
+	static T &get(const std::reference_wrapper<T> &value) {
 		return value;
 	}
 };
