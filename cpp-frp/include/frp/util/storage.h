@@ -3,6 +3,7 @@
 
 #include <array>
 #include <cstdint>
+#include <frp/util/observable.h>
 #include <memory>
 
 namespace frp {
@@ -47,6 +48,11 @@ struct storage_type<void> {
 	auto compare_value(storage_type &storage) const {
 		return false;
 	}
+};
+
+template<typename T>
+struct storage_supplier_type : observable_type {
+	virtual std::shared_ptr<storage_type<T>> get() const = 0;
 };
 
 template<typename T, std::size_t DependenciesN>

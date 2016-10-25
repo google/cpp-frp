@@ -18,13 +18,9 @@ struct repository_type {
 
 	typedef T value_type;
 
-	struct storage_type : util::observable_type {
-		virtual std::shared_ptr<util::storage_type<T>> get() const = 0;
-	};
-
 	template<typename GeneratorT, typename... DependenciesT>
 	struct template_storage_type
-		: storage_type
+		: util::storage_supplier_type<T>
 		, std::enable_shared_from_this<template_storage_type<GeneratorT, DependenciesT...>> {
 
 		constexpr static std::size_t dependencies_size = sizeof...(DependenciesT);
@@ -110,7 +106,7 @@ struct repository_type {
 	repository_type &operator=(const repository_type &) = delete;
 	repository_type &operator=(repository_type &&) = default;
 
-	std::shared_ptr<storage_type> storage;
+	std::shared_ptr<util::storage_supplier_type<T>> storage;
 	std::vector<util::observable_type::reference_type> callbacks;
 };
 

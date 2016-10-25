@@ -17,12 +17,8 @@ struct sink_repository_type {
 
 	typedef T value_type;
 
-	struct storage_type {
-		virtual std::shared_ptr<util::storage_type<T>> get() const = 0;
-	};
-
 	template<typename DependencyT>
-	struct template_storage_type : storage_type {
+	struct template_storage_type : util::storage_supplier_type<T> {
 
 		explicit template_storage_type(DependencyT &&dependency)
 			: dependency(std::forward<DependencyT>(dependency)) {}
@@ -89,7 +85,7 @@ struct sink_repository_type {
 	sink_repository_type &operator=(const sink_repository_type &) = delete;
 	sink_repository_type &operator=(sink_repository_type &&) = default;
 
-	std::shared_ptr<storage_type> storage;
+	std::shared_ptr<util::storage_supplier_type<T>> storage;
 	util::observable_type::reference_type callback;
 };
 
