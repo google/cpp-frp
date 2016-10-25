@@ -18,10 +18,11 @@ struct repository_type {
 
 	typedef T value_type;
 
-	template<typename GeneratorT, typename... DependenciesT>
+	template<typename GeneratorT, typename Comparator, typename... DependenciesT>
 	struct template_storage_type
 		: util::storage_supplier_type<T>
-		, std::enable_shared_from_this<template_storage_type<GeneratorT, DependenciesT...>> {
+		, std::enable_shared_from_this<template_storage_type<
+			GeneratorT, Comparator, DependenciesT...>> {
 
 		constexpr static std::size_t dependencies_size = sizeof...(DependenciesT);
 		typedef util::commit_storage_type<T, dependencies_size> commit_storage_type;
@@ -48,7 +49,8 @@ struct repository_type {
 						auto value(std::atomic_load(&storage->value));
 						do {
 							commit->revision = (value ? value->revision : util::default_revision) + 1;
-							if (value && (!value->is_newer(revisions) || commit->compare_value(*value))) {
+							if (value && (!value->is_newer(revisions)
+								|| commit->compare_value(*value, storage->comparator))) {
 								return;
 							}
 						} while (!std::atomic_compare_exchange_strong(&storage->value, &value,
@@ -59,19 +61,21 @@ struct repository_type {
 			}
 		}
 
-		explicit template_storage_type(GeneratorT &&generator, DependenciesT &&... dependencies)
+		template_storage_type(GeneratorT &&generator, DependenciesT &&... dependencies)
 			: dependencies(std::forward<DependenciesT>(dependencies)...)
 			, generator(std::forward<GeneratorT>(generator)) {}
 
 		std::shared_ptr<commit_storage_type> value; // Use atomics!
 		std::tuple<DependenciesT...> dependencies;
 		GeneratorT generator;
+		Comparator comparator;
 	};
 
-	template<typename GeneratorT, typename... DependenciesT>
+	template<typename Comparator, typename GeneratorT, typename... DependenciesT>
 	static auto make(GeneratorT &&generator, DependenciesT &&... dependencies) {
-		return repository_type(std::make_shared<template_storage_type<GeneratorT, DependenciesT...>>(
-			std::forward<GeneratorT>(generator), std::forward<DependenciesT>(dependencies)...));
+		return repository_type(std::make_shared<template_storage_type<
+			GeneratorT, Comparator, DependenciesT...>>(std::forward<GeneratorT>(generator),
+				std::forward<DependenciesT>(dependencies)...));
 	}
 
 	template<typename StorageT>

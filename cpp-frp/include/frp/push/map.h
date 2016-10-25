@@ -9,8 +9,7 @@ namespace frp {
 namespace push {
 namespace implementation {
 
-template<typename T, typename F, typename Executor, typename Input,
-	typename Container = std::vector<T>>
+template<typename T, typename F, typename Executor, typename Input, typename Container>
 struct map_generator_type {
 	typedef Container value_type;
 	typedef util::commit_storage_type<value_type, 1> commit_storage_type;
@@ -26,7 +25,7 @@ struct map_generator_type {
 			callback(std::make_shared<commit_storage_type>(value_type(),
 				util::default_revision, revisions));
 		} else {
-			auto collector(util::make_collector_type<T>(
+			auto collector(util::make_collector_type<T, Container>(
 				[callback = std::forward<CallbackT>(callback), revisions](value_type &&value) {
 					callback(std::make_shared<commit_storage_type>(std::forward<value_type>(value),
 						util::default_revision, revisions));
@@ -51,15 +50,22 @@ using map_return_type =
 
 }  // namespace implementation
 
+template<typename Container, typename Comparator = std::equal_to<Container>, typename Function,
+	typename Dependency>
+auto map(Function function, Dependency dependency) {
+	typedef implementation::map_return_type<Function, Dependency> value_type;
+	typedef implementation::map_generator_type<value_type,
+		internal::get_function_t<Function>, internal::get_executor_t<Function>,
+		typename util::unwrap_t<Dependency>::value_type, Container> generator_type;
+	return repository_type<Container>::make<Comparator>(generator_type(
+		std::move(internal::get_function(function)), std::move(internal::get_executor(function))),
+		std::forward<Dependency>(dependency));
+}
+
 template<typename Function, typename Dependency>
 auto map(Function function, Dependency dependency) {
-	typedef implementation::map_return_type<Function, Dependency> return_type;
-	typedef implementation::map_generator_type<return_type,
-		internal::get_function_t<Function>, internal::get_executor_t<Function>,
-		typename util::unwrap_t<Dependency>::value_type> generator_type;
-	typedef typename generator_type::value_type value_type;
-	return repository_type<value_type>::make(generator_type(
-		std::move(internal::get_function(function)), std::move(internal::get_executor(function))),
+	typedef implementation::map_return_type<Function, Dependency> value_type;
+	return map<std::vector<value_type>>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
 }
 

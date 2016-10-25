@@ -37,6 +37,11 @@ struct storage_type {
 	auto compare_value(storage_type &storage) const {
 		return value == storage.value;
 	}
+
+	template<typename Comparator>
+	auto compare_value(storage_type &storage, Comparator &comparator) const {
+		return comparator(value, storage.value);
+	}
 };
 
 template<>
@@ -46,6 +51,11 @@ struct storage_type<void> {
 	storage_type(revision_type revision) : revision(revision) {}
 
 	auto compare_value(storage_type &storage) const {
+		return false;
+	}
+
+	template<typename Comparator>
+	auto compare_value(storage_type &storage, Comparator &comparator) const {
 		return false;
 	}
 };

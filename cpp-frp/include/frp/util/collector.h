@@ -3,12 +3,11 @@
 
 #include <atomic>
 #include <frp/util/list.h>
-#include <vector>
 
 namespace frp {
 namespace util {
 
-template<typename T, typename F, typename Container = std::vector<T>>
+template<typename T, typename Container, typename F>
 struct collector_type {
 	F f;
 	single_list_type<T> list;
@@ -31,6 +30,7 @@ struct collector_type {
 	void decrease() {
 		if (--counter == 0) {
 			Container container;
+			// TODO(gardell): Can't call reserve for non-vector types.
 			container.reserve(num_elements);
 			list.for_each([&](auto &value) {
 				container.push_back(std::move(value));
@@ -40,9 +40,9 @@ struct collector_type {
 	}
 };
 
-template<typename T, typename F>
+template<typename T, typename Container, typename F>
 auto make_collector_type(F &&f, std::size_t num_elements) {
-	return std::make_shared<collector_type<T, F>>(std::forward<F>(f), num_elements);
+	return std::make_shared<collector_type<T, Container, F>>(std::forward<F>(f), num_elements);
 }
 
 } // namespace util

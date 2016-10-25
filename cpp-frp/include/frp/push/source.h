@@ -27,7 +27,7 @@ struct source_repository_type {
 	};
 
 	auto &operator=(T &&value) const {
-		accept((std::make_shared<util::storage_type<T>>(std::forward<T>(value))));
+		accept(std::make_shared<util::storage_type<T>>(std::forward<T>(value)));
 		return *this;
 	}
 

@@ -139,3 +139,34 @@ TEST(transform, bind) {
 	auto sink(frp::push::sink(std::ref(result)));
 	ASSERT_EQ(*sink, 42 * 5);
 }
+
+struct C {
+	int a, b;
+
+	auto operator==(const C &c) const {
+		return a == c.a && b == c.b;
+	}
+};
+
+struct C_comparator {
+	auto operator()(const C &lhs, const C &rhs) {
+		return lhs.a == rhs.a;
+	}
+};
+
+TEST(transform, custom_comparator) {
+	auto source(frp::push::source(C{ 0, 0, }));
+	auto transform(frp::push::transform<C_comparator>([](auto c) { return c; }, std::ref(source)));
+	auto sink(frp::push::sink(std::ref(transform)));
+	auto value1(*sink);
+	ASSERT_EQ(value1.a, 0);
+	ASSERT_EQ(value1.b, 0);
+	source = { 0, 1 };
+	auto value2(*sink);
+	ASSERT_EQ(value2.a, 0);
+	ASSERT_EQ(value2.b, 0);
+	source = { 1, 1 };
+	auto value3(*sink);
+	ASSERT_EQ(value3.a, 1);
+	ASSERT_EQ(value3.b, 1);
+}

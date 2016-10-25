@@ -48,14 +48,6 @@ struct sink_repository_type {
 		}
 	}
 
-	void accept(std::shared_ptr<util::storage_type<T>> &&replacement) const {
-		auto current = get();
-		do {
-			replacement->revision = (current ? current->revision : util::default_revision) + 1;
-		} while ((!current || !current->compare_value(*replacement))
-			&& !std::atomic_compare_exchange_weak(&storage->value, &current, replacement));
-	}
-
 	auto get() const {
 		return storage->get();
 	}
@@ -71,11 +63,11 @@ struct sink_repository_type {
 		: storage(storage)
 		, callback(util::add_callback(util::unwrap_reference(storage->dependency),
 			[storage, weak_storage = std::weak_ptr<StorageT>(storage)]() {
-		auto storage(weak_storage.lock());
-		if (storage) {
-			storage->evaluate();
-		}
-	})) {
+				auto storage(weak_storage.lock());
+				if (storage) {
+					storage->evaluate();
+				}
+			})) {
 		storage->evaluate();
 	}
 

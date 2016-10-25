@@ -36,16 +36,23 @@ using transform_return_type =
 
 }  // namespace implementation
 
-template<typename Function, typename... Dependencies>
+template<typename Comparator, typename Function, typename... Dependencies>
 auto transform(Function function, Dependencies... dependencies) {
 	typedef implementation::transform_return_type<Function, Dependencies...> value_type;
 	typedef implementation::transform_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependencies>::value_type...> generator_type;
-	return repository_type<value_type>::make(
+	return repository_type<value_type>::make<Comparator>(
 		generator_type(std::move(internal::get_function(function)),
 			std::move(internal::get_executor(function))),
 		std::forward<Dependencies>(dependencies)...);
+}
+
+template<typename Function, typename... Dependencies>
+auto transform(Function function, Dependencies... dependencies) {
+	typedef implementation::transform_return_type<Function, Dependencies...> value_type;
+	return transform<std::equal_to<value_type>, Function, Dependencies...>(
+		std::forward<Function>(function), std::forward<Dependencies>(dependencies)...);
 }
 
 } // namespace push
