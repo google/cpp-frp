@@ -28,3 +28,19 @@ TEST(source, undefined_access) {
 	ASSERT_FALSE(sink);
 	ASSERT_THROW(*sink, std::domain_error);
 }
+
+struct odd_comparator {
+	auto operator()(int lhs, int rhs) {
+		return lhs % 2 == rhs % 2;
+	}
+};
+
+TEST(source, custom_comparator) {
+	auto source(frp::push::source<odd_comparator>(2));
+	auto sink(frp::push::sink(std::ref(source)));
+	ASSERT_EQ(*sink, 2);
+	source = 4;
+	ASSERT_EQ(*sink, 2);
+	source = 5;
+	ASSERT_EQ(*sink, 5);
+}

@@ -52,7 +52,8 @@ The requirements for value types are as follows:
 
  - Must be *move constructible*
   * If used with ```sink``` it must be *copy constructible*
- - Implement the equality comparator ```auto T::operator==(const T &)``` or equivalent
+ - Unless a custom *comparator* is used with ```map```, ```transform``` or ```source```:
+  * Implement the equality comparator ```auto T::operator==(const T &)``` or equivalent
 
 ### Function types
 Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well.
