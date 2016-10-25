@@ -13,7 +13,7 @@ template<typename T, typename = bool>
 struct is_equality_comparable : std::false_type {};
 
 template<typename T>
-struct is_equality_comparable<T, decltype(std::declval<T&>() == std::declval<T&>())>
+struct is_equality_comparable<T, decltype(std::declval<const T&>() == std::declval<const T&>())>
 	: std::true_type {};
 
 typedef uint64_t revision_type;
