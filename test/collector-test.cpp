@@ -1,6 +1,8 @@
 #include <frp/util/collector.h>
 #include <gtest/gtest.h>
 
+// TODO(gardell): Test the vector_view_type and accompanying classes.
+
 struct movable_type {
 	movable_type() = default;
 	movable_type(const movable_type &) = delete;
