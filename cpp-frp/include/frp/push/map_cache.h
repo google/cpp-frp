@@ -32,11 +32,11 @@ struct map_cache_generator_type {
 		else {
 			auto collector(std::make_shared<collector_type>(storage->value.size()));
 			std::size_t counter(0);
-			for (auto &value : storage->value) {
+			for (const auto &value : storage->value) {
 				std::size_t index(counter++);
 				executor([this, storage, collector, index, &value, callback, revisions, previous]() {
 					typename commit_storage_type::cache_type::iterator it;
-					if (previous && (it = previous->cache.find(std::ref(value))) != previous->cache.end()
+					if (previous && (it = previous->cache.find(value)) != previous->cache.end()
 						? collector->construct(index, it->second)
 						: collector->construct(index, function(value))) {
 						auto commit(std::make_shared<commit_storage_type>(

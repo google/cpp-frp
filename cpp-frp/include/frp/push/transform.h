@@ -22,7 +22,7 @@ struct transform_generator_type {
 		const std::shared_ptr<commit_storage_type> &previous,
 		const std::shared_ptr<util::storage_type<Ts>> &... storage) const {
 		executor([=, callback = std::move(callback)]() {
-			callback(commit_storage_type::make(std::bind(function, std::ref(storage->value)...),
+			callback(commit_storage_type::make(std::bind(function, std::cref(storage->value)...),
 				revisions));
 		});
 	}
