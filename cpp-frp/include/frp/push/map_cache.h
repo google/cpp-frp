@@ -56,9 +56,10 @@ struct map_cache_generator_type {
 	Executor executor;
 };
 
-template<typename Function, typename Dependency>
-using map_return_type =
-	decltype((*(Function *)0)(*(typename util::unwrap_t<Dependency>::value_type::value_type *)0));
+// TODO(gardell): Reuse
+template<typename F, typename D>
+using map_return_type = decltype(std::declval<F>()(
+	std::declval<const typename util::unwrap_t<D>::value_type::value_type &>()));
 
 }  // namespace implementation
 

@@ -31,15 +31,11 @@ struct transform_generator_type {
 	Executor executor;
 };
 
-template<typename Function, typename... Dependencies>
-using transform_return_type =
-	decltype((*(Function *)0)(*((typename util::unwrap_t<Dependencies>::value_type*)0)...));
-
 }  // namespace implementation
 
 template<typename Comparator, typename Function, typename... Dependencies>
 auto transform(Function function, Dependencies... dependencies) {
-	typedef implementation::transform_return_type<Function, Dependencies...> value_type;
+	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	typedef implementation::transform_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependencies>::value_type...> generator_type;
@@ -51,7 +47,7 @@ auto transform(Function function, Dependencies... dependencies) {
 
 template<typename Function, typename... Dependencies>
 auto transform(Function function, Dependencies... dependencies) {
-	typedef implementation::transform_return_type<Function, Dependencies...> value_type;
+	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	return transform<std::equal_to<value_type>, Function, Dependencies...>(
 		std::forward<Function>(function), std::forward<Dependencies>(dependencies)...);
 }

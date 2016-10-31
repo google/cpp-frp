@@ -19,6 +19,14 @@ auto invoke(F &&f, Tuple tuple) {
 		std::make_index_sequence<std::tuple_size<unwrap_t<Tuple>>::value>{});
 }
 
+template<typename F, typename... Ds>
+using transform_return_type = decltype(std::declval<F>()(
+	std::declval<const typename util::unwrap_t<Ds>::value_type &>()...));
+
+template<typename F, typename... Ds>
+using map_return_type = decltype(std::declval<F>()(
+	std::declval<const typename util::unwrap_t<Ds>::value_type::value_type &>()...));
+
 } // namespace util
 } // namespace frp
 
