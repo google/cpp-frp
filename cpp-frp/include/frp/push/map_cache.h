@@ -3,6 +3,7 @@
 
 #include <frp/push/repository.h>
 #include <frp/util/collector.h>
+#include <frp/util/vector_view.h>
 #include <vector>
 
 namespace frp {
@@ -12,7 +13,7 @@ namespace implementation {
 template<typename T, typename F, typename Executor, typename Input, typename Comparator, typename Hash>
 struct map_cache_generator_type {
 	typedef util::fixed_size_collector_type<T, Comparator> collector_type;
-	typedef util::collector_view_type<T, Comparator> collector_view_type;
+	typedef util::vector_view_type<T, Comparator> collector_view_type;
 	typedef util::map_cache_commit_storage_type<typename Input::value_type, T, collector_view_type,
 		Hash, 1> commit_storage_type;
 	typedef typename commit_storage_type::revisions_type revisions_type;

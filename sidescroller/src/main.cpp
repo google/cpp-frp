@@ -159,7 +159,7 @@ int main(int argc, char *argv[]) {
 
 	auto dynamics(frp::push::transform(
 		[](auto dynamic, const auto &dynamics) {
-			std::vector<std::shared_ptr<dynamic_body_type>> vector{ dynamics.begin(), dynamics.end() };
+			std::vector<std::shared_ptr<dynamic_body_type>> vector(dynamics.begin(), dynamics.end());
 			vector.push_back(dynamic);
 			return vector;
 		},
@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 		},
 		std::ref(characters)));
 
-	sink_type<frp::util::collector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
+	sink_type<frp::util::vector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
 		for (const auto &sprite : sprites) {
 			draw(ren, sprite);
 		}
