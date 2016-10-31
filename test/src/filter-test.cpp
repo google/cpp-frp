@@ -12,7 +12,9 @@ TEST(filter, test1) {
 
 	std::promise<std::vector<int>> promise;
 	auto future = promise.get_future();
-	auto result(frp::push::transform([&](const auto &values) { promise.set_value(values); },
+	auto result(frp::push::transform([&](const auto &values) {
+			promise.set_value(std::vector<int>(std::begin(values), std::end(values)));
+		},
 		std::ref(map)));
 	auto values(future.get());
 	ASSERT_EQ(values.size(), 2);

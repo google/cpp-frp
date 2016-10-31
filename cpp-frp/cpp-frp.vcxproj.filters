@@ -75,5 +75,8 @@
     <ClInclude Include="include\frp\push\sink.h">
       <Filter>Header Files\push</Filter>
     </ClInclude>
+    <ClInclude Include="include\frp\push\map_cache.h">
+      <Filter>Header Files\push</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

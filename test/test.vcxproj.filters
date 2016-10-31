@@ -30,6 +30,15 @@
     <ClCompile Include="src\source-sink-test.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="map_cache-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="vector-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="collector-test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\array_util.h">

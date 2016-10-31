@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <frp/util/observable.h>
 #include <memory>
+#include <unordered_map>
 
 namespace frp {
 namespace util {
@@ -105,6 +106,21 @@ struct commit_storage_type<void, DependenciesN> : storage_type<void> {
 	bool is_newer(const revisions_type &revisions) const {
 		return !(revisions < this->revisions);
 	}
+};
+
+// TODO(gardell): ADD HASH TYPE
+// TODO(gardell): Key should be reference_wrapper
+// Wrap reference_wrapper hash function around K hash type
+template<typename K, typename V, typename Container, typename Hash, std::size_t DependenciesN>
+struct map_cache_commit_storage_type : commit_storage_type<Container, DependenciesN> {
+
+	typedef std::unordered_map<K, std::reference_wrapper<V>, Hash> cache_type;
+	cache_type cache;
+
+	map_cache_commit_storage_type(Container &&value, revision_type revision,
+		const revisions_type &revisions)
+		: commit_storage_type<Container, DependenciesN>(
+			std::forward<Container>(value), revision, revisions) {}
 };
 
 } // namespace util

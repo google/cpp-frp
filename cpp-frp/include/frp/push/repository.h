@@ -25,7 +25,7 @@ struct repository_type {
 			GeneratorT, Comparator, DependenciesT...>> {
 
 		constexpr static std::size_t dependencies_size = sizeof...(DependenciesT);
-		typedef util::commit_storage_type<T, dependencies_size> commit_storage_type;
+		typedef typename GeneratorT::commit_storage_type commit_storage_type;
 
 		std::shared_ptr<util::storage_type<T>> get() const final override {
 			return std::atomic_load(&value);
@@ -56,7 +56,7 @@ struct repository_type {
 						} while (!std::atomic_compare_exchange_strong(&storage->value, &value,
 							commit));
 						storage->update();
-					}, revisions, values...);
+					}, revisions, value, values...);
 				}
 			}
 		}

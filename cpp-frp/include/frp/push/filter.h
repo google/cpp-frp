@@ -9,11 +9,11 @@ namespace frp {
 namespace push {
 namespace implementation {
 
-template<typename T, typename F, typename Executor, typename Input,
-	typename Container>
+template<typename T, typename F, typename Executor, typename Input, typename Comparator>
 struct filter_generator_type {
-	typedef Container value_type;
-	typedef util::commit_storage_type<value_type, 1> commit_storage_type;
+	typedef util::append_collector_type<T, Comparator> collector_type;
+	typedef util::collector_view_type<T, Comparator> collector_view_type;
+	typedef util::commit_storage_type<collector_view_type, 1> commit_storage_type;
 	typedef typename commit_storage_type::revisions_type revisions_type;
 
 	filter_generator_type(F &&function, Executor &&executor)
@@ -21,22 +21,25 @@ struct filter_generator_type {
 
 	template<typename CallbackT>
 	void operator()(CallbackT &&callback, revisions_type &revisions,
+		const std::shared_ptr<commit_storage_type> &previous,
 		const std::shared_ptr<util::storage_type<Input>> & storage) const {
-		auto collector(util::make_collector_type<T, Container>(
-			[callback = std::forward<CallbackT>(callback), revisions](value_type &&value) {
-			callback(std::make_shared<commit_storage_type>(std::forward<value_type>(value),
+		if (storage->value.empty()) {
+			callback(std::make_shared<commit_storage_type>(collector_view_type(collector_type(0)),
 				util::default_revision, revisions));
-		},
-			storage->value.size()));
-		for (const auto &value : storage->value) {
-			// explicit capture of storage to keep shared_ptr alive.
-			executor([this, storage, &value, collector]() {
-				if (function(value)) {
-					collector->append_and_call_if_ready(value);
-				} else {
-					collector->decrease();
-				}
-			});
+		} else {
+			auto collector(std::make_shared<collector_type>(storage->value.size()));
+			std::size_t counter(0);
+			for (const auto &value : storage->value) {
+				std::size_t index(counter++);
+				executor([this, storage, collector, index, &value, callback, revisions]() {
+					if (function(value)
+						? collector->construct(std::ref(value)) : collector->skip()) {
+						callback(std::make_shared<commit_storage_type>(
+							collector_view_type(std::move(*collector)),
+							util::default_revision, revisions));
+					}
+				});
+			}
 		}
 	}
 
@@ -46,22 +49,23 @@ struct filter_generator_type {
 
 }  // namespace implementation
 
-template<typename Container, typename Comparator = std::equal_to<Container>, typename Function,
-	typename Dependency>
+template<typename Comparator, typename Function, typename Dependency>
 auto filter(Function function, Dependency dependency) {
 	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
 	typedef implementation::filter_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
-		typename util::unwrap_t<Dependency>::value_type, Container> generator_type;
-	return repository_type<Container>::make<Comparator>(generator_type(
-		std::move(internal::get_function(function)), std::move(internal::get_executor(function))),
+		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
+	typedef typename generator_type::collector_view_type collector_view_type;
+	return repository_type<collector_view_type>::make<std::equal_to<collector_view_type>>(
+		generator_type(std::move(internal::get_function(function)),
+			std::move(internal::get_executor(function))),
 		std::forward<Dependency>(dependency));
 }
 
 template<typename Function, typename Dependency>
 auto filter(Function function, Dependency dependency) {
 	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
-	return filter<std::vector<value_type>>(std::forward<Function>(function),
+	return filter<std::equal_to<value_type>>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
 }
 

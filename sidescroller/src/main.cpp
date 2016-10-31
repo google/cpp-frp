@@ -95,7 +95,7 @@ struct sink_type {
 	template<typename F, typename Supplier>
 	sink_type(F &&function, Supplier supplier)
 		: function(std::forward<F>(function))
-		, receiver(frp::push::transform([this](auto value) {
+		, receiver(frp::push::transform([this](const auto &value) {
 			std::atomic_store(&current, std::make_shared<T>(value));
 		}, supplier)) {}
 
@@ -158,8 +158,8 @@ int main(int argc, char *argv[]) {
 	}, std::ref(arrows)));
 
 	auto dynamics(frp::push::transform(
-		[](auto dynamic, auto dynamics) {
-			std::vector<std::shared_ptr<dynamic_body_type>> vector{ dynamics };
+		[](auto dynamic, const auto &dynamics) {
+			std::vector<std::shared_ptr<dynamic_body_type>> vector{ dynamics.begin(), dynamics.end() };
 			vector.push_back(dynamic);
 			return vector;
 		},
@@ -189,8 +189,8 @@ int main(int argc, char *argv[]) {
 		},
 		std::ref(characters)));
 
-	sink_type<std::vector<sprite_type>> renderer([&ren](auto sprites) {
-		for (const auto sprite : sprites) {
+	sink_type<frp::util::collector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
+		for (const auto &sprite : sprites) {
 			draw(ren, sprite);
 		}
 	}, std::ref(sprites));

@@ -19,6 +19,7 @@ struct transform_generator_type {
 
 	template<typename CallbackT>
 	void operator()(CallbackT &&callback, revisions_type &revisions,
+		const std::shared_ptr<commit_storage_type> &previous,
 		const std::shared_ptr<util::storage_type<Ts>> &... storage) const {
 		executor([=, callback = std::move(callback)]() {
 			callback(commit_storage_type::make(std::bind(function, std::ref(storage->value)...),

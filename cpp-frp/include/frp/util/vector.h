@@ -2,6 +2,8 @@
 #define _FRP_UTIL_VECTOR_H_
 
 #include <array>
+#include <atomic>
+#include <memory>
 #include <vector>
 
 namespace frp {
