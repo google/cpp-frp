@@ -26,9 +26,6 @@ struct storage_type {
 	T value;
 	revision_type revision;
 
-	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
-	static_assert(is_equality_comparable<T>::value, "T must implement equality comparator");
-
 	storage_type(T &&value, revision_type revision = default_revision)
 		: value(std::forward<T>(value)), revision(revision) {}
 

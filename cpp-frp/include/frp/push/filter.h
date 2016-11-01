@@ -53,6 +53,7 @@ struct filter_generator_type {
 template<typename Comparator, typename Function, typename Dependency>
 auto filter(Function function, Dependency dependency) {
 	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
+	static_assert(std::is_copy_constructible<value_type>::value, "T must be copy constructible");
 	typedef implementation::filter_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
@@ -66,6 +67,8 @@ auto filter(Function function, Dependency dependency) {
 template<typename Function, typename Dependency>
 auto filter(Function function, Dependency dependency) {
 	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
+	static_assert(util::is_equality_comparable<value_type>::value,
+		"T must implement equality comparator");
 	return filter<std::equal_to<value_type>>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
 }

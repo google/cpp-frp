@@ -65,7 +65,10 @@ using map_return_type = decltype(std::declval<F>()(
 
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
 auto map_cache(Function function, Dependency dependency) {
+	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
+	static_assert(std::is_copy_constructible<argument_type>::value, "Input type must be copy constructible");
 	typedef implementation::map_return_type<Function, Dependency> value_type;
+	static_assert(std::is_copy_constructible<value_type>::value, "Output must be copy constructible");
 	typedef implementation::map_cache_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator, Hash> generator_type;
@@ -78,6 +81,8 @@ auto map_cache(Function function, Dependency dependency) {
 template<typename Hash, typename Function, typename Dependency>
 auto map_cache(Function function, Dependency dependency) {
 	typedef implementation::map_return_type<Function, Dependency> value_type;
+	static_assert(util::is_equality_comparable<value_type>::value,
+		"T must implement equality comparator");
 	return map_cache<std::equal_to<value_type>, Hash>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
 }

@@ -6,6 +6,7 @@
 #include <future>
 #include <gtest/gtest.h>
 #include <string>
+#include <test_types.h>
 #include <vector>
 
 TEST(map_cache, test1) {
@@ -42,16 +43,9 @@ TEST(map_cache, test_caching) {
 	ASSERT_EQ(counter[6], 1);
 }
 
-struct even_comparator {
-
-	auto operator()(int lhs, int rhs) {
-		return lhs % 2 == rhs % 2;
-	}
-};
-
 TEST(map_cache, custom_comparator) {
-	auto source(frp::push::source(std::vector<int>{ 1, 3, 5 }));
-	auto map(frp::push::map_cache<even_comparator, std::hash<int>>([](auto c) { return c; },
+	auto source(frp::push::source(make_array(1, 3, 5)));
+	auto map(frp::push::map_cache<odd_comparator_type, std::hash<int>>([](auto c) { return c; },
 		std::ref(source)));
 	auto sink(frp::push::sink(std::ref(map)));
 	auto value1(*sink);

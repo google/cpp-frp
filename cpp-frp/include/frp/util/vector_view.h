@@ -8,12 +8,125 @@
 namespace frp {
 namespace util {
 
+template<typename T, typename Comparator, typename Allocator, bool CopyConstructible>
+struct vector_view_type_impl;
+
+template<typename T, typename Comparator, typename Allocator>
+struct vector_view_type_impl<T, Comparator, Allocator, false> {
+
+	typedef array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, false>,
+		Allocator> deleter_type;
+	typedef std::unique_ptr<T[], deleter_type> storage_type;
+	typedef std::size_t size_type;
+	typedef T *pointer;
+
+	vector_view_type_impl()
+		: storage((pointer) nullptr, deleter_type{ *this }), storage_size(0), capacity(0) {}
+
+	vector_view_type_impl(vector_view_type_impl &&copy)
+		: storage(copy.storage.release(), deleter_type{ *this })
+		, comparator(std::move(copy.comparator))
+		, allocator(std::move(copy.allocator))
+		, storage_size(copy.storage_size), capacity(copy.capacity) {}
+
+	vector_view_type_impl &operator=(vector_view_type_impl &&copy) {
+		storage = storage_type(copy.storage.release(), deleter_type{ *this });
+		comparator = std::move(copy.comparator);
+		allocator = std::move(copy.allocator);
+		storage_size = copy.storage_size;
+		capacity = copy.capacity;
+		return *this;
+	}
+
+	template<typename Deleter>
+	vector_view_type_impl(std::unique_ptr<T[], Deleter> &&storage, Comparator &&comparator,
+		Allocator &&allocator, size_type storage_size, size_type capacity)
+		: storage(storage.release(), deleter_type{ *this })
+		, comparator(std::forward<Comparator>(comparator))
+		, allocator(std::forward<Allocator>(allocator))
+		, storage_size(storage_size)
+		, capacity(capacity) {}
+
+	storage_type storage;
+	Comparator comparator;
+	Allocator allocator;
+	size_type storage_size;
+	size_type capacity;
+};
+
+template<typename T, typename Comparator, typename Allocator>
+struct vector_view_type_impl<T, Comparator, Allocator, true> {
+
+	typedef array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, true>,
+		Allocator> deleter_type;
+	typedef std::unique_ptr<T[], deleter_type> storage_type;
+	typedef std::size_t size_type;
+	typedef T *pointer;
+
+	vector_view_type_impl()
+		: storage((pointer) nullptr, deleter_type{ *this }), storage_size(0), capacity(0) {}
+
+	vector_view_type_impl(vector_view_type_impl &&copy)
+		: storage(copy.storage.release(), deleter_type{ *this })
+		, comparator(std::move(copy.comparator))
+		, allocator(std::move(copy.allocator))
+		, storage_size(copy.storage_size), capacity(copy.capacity) {}
+
+	vector_view_type_impl(const vector_view_type_impl &copy)
+		: storage(allocator.allocate(copy.storage_size), deleter_type{ *this })
+		, comparator(copy.comparator)
+		, allocator(copy.allocator)
+		, storage_size(copy.storage_size)
+		, capacity(copy.storage_size) {
+		for (size_type index = 0; index < storage_size; ++index) {
+			std::allocator_traits<Allocator>::construct(allocator, &storage[index],
+				std::ref(copy.storage[index]));
+		}
+	}
+
+	vector_view_type_impl &operator=(vector_view_type_impl &&copy) {
+		storage = storage_type(copy.storage.release(), deleter_type{ *this });
+		comparator = std::move(copy.comparator);
+		allocator = std::move(copy.allocator);
+		storage_size = copy.storage_size;
+		capacity = copy.capacity;
+		return *this;
+	}
+
+	vector_view_type_impl &operator=(const vector_view_type_impl &copy) {
+		comparator = copy.comparator;
+		allocator = copy.allocator;
+		storage_size = copy.storage_size;
+		capacity = copy.capacity;
+		storage.reset(allocator.allocate(storage_size));
+		for (size_type index = 0; index < storage_size; ++index) {
+			std::allocator_traits<Allocator>::construct(allocator, &storage[index],
+				std::ref(copy[index]));
+		}
+		return *this;
+	}
+
+	template<typename Deleter>
+	vector_view_type_impl(std::unique_ptr<T[], Deleter> &&storage, Comparator &&comparator,
+		Allocator &&allocator, size_type storage_size, size_type capacity)
+		: storage(storage.release(), deleter_type{ *this })
+		, comparator(std::forward<Comparator>(comparator))
+		, allocator(std::forward<Allocator>(allocator))
+		, storage_size(storage_size)
+		, capacity(capacity) {}
+
+	storage_type storage;
+	Comparator comparator;
+	Allocator allocator;
+	size_type storage_size;
+	size_type capacity;
+};
+
 template<typename T, typename Comparator = std::equal_to<T>,
 	typename Allocator = std::allocator<T>>
-struct vector_view_type {
+struct vector_view_type : vector_view_type_impl<T, Comparator, Allocator, std::is_copy_constructible<T>::value> {
 
-	typedef array_deleter_type<T, vector_view_type<T, Comparator, Allocator>, Allocator>
-		deleter_type;
+	typedef vector_view_type_impl<T, Comparator, Allocator, std::is_copy_constructible<T>::value> parent_type;
 
 	typedef T value_type;
 	typedef Allocator allocator_type;
@@ -114,49 +227,15 @@ struct vector_view_type {
 	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
 	explicit vector_view_type(fixed_size_collector_type<T, Comparator, Allocator> &&collector)
-		: storage(collector.storage.release(), deleter_type{ *this })
-		, comparator(std::move(collector.comparator))
-		, allocator(std::move(collector.allocator))
-		, storage_size(collector.storage_size)
-		, capacity(collector.capacity) {
+		: parent_type(std::move(collector.storage), std::move(collector.comparator),
+			std::move(collector.allocator), collector.storage_size, collector.capacity) {
 		assert(storage_size == collector.capacity);
 	}
 
 	explicit vector_view_type(append_collector_type<T, Comparator, Allocator> &&collector)
-		: storage(collector.storage.release(), deleter_type{ *this })
-		, comparator(std::move(collector.comparator))
-		, allocator(std::move(collector.allocator))
-		, storage_size(collector.storage_size)
-		, capacity(collector.capacity) {
+		: parent_type(std::move(collector.storage), std::move(collector.comparator),
+			std::move(collector.allocator), collector.storage_size, collector.capacity) {
 		assert(capacity == collector.counter);
-	}
-
-	vector_view_type(const vector_view_type &collector)
-		: storage(allocator.allocate(collector.storage_size), deleter_type{ *this })
-		, comparator(std::move(collector.comparator))
-		, allocator(std::move(collector.allocator))
-		, storage_size(collector.storage_size)
-		, capacity(collector.storage_size) {
-		for (size_type index = 0; index < storage_size; ++index) {
-			std::allocator_traits<Allocator>::construct(allocator, &storage[index],
-				std::ref(collector[index]));
-		}
-	}
-
-	vector_view_type()
-		: storage((pointer) nullptr, deleter_type{ *this }), storage_size(0), capacity(0) {}
-
-	auto &operator=(const vector_view_type &copy) {
-		comparator = copy.comparator;
-		allocator = copy.allocator;
-		storage_size = copy.storage_size;
-		capacity = copy.capacity;
-		storage.reset(allocator.allocate(storage_size));
-		for (size_type index = 0; index < storage_size; ++index) {
-			std::allocator_traits<Allocator>::construct(allocator, &storage[index],
-				std::ref(copy[index]));
-		}
-		return *this;
 	}
 
 	reference operator[](size_type index) const {
@@ -168,7 +247,7 @@ struct vector_view_type {
 	}
 
 	const_iterator end() const {
-		return const_iterator(storage.get() + storage_size);
+		return const_iterator(storage.get() + size());
 	}
 
 	auto rbegin() const {
@@ -184,20 +263,13 @@ struct vector_view_type {
 	}
 
 	bool empty() const {
-		return storage_size == 0;
+		return size() == 0;
 	}
 
 	bool operator==(const vector_view_type &collector) const {
-		return storage_size == collector.size()
+		return size() == collector.size()
 			&& std::equal(begin(), end(), collector.begin(), collector.end(), comparator);
 	}
-
-	typedef std::unique_ptr<T[], deleter_type> storage_type;
-	storage_type storage;
-	Comparator comparator;
-	Allocator allocator;
-	size_type storage_size;
-	size_type capacity;
 };
 
 } // namespace util

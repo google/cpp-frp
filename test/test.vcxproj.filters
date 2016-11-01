@@ -44,5 +44,8 @@
     <ClInclude Include="include\array_util.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\test_types.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
