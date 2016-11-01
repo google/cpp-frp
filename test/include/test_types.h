@@ -20,13 +20,18 @@ struct hash_movable_type {
 
 struct odd_comparator_type {
 
-	bool operator()(const movable_type &lhs, const movable_type &rhs) const {
-		return operator()(lhs.value, rhs.value);
-	}
-
 	bool operator()(int lhs, int rhs) const {
 		return lhs % 2 == rhs % 2;
 	}
+};
+
+struct movable_odd_comparator_type {
+
+	bool operator()(const movable_type &lhs, const movable_type &rhs) const {
+		return comparator(lhs.value, rhs.value);
+	}
+
+	odd_comparator_type comparator;
 };
 
 #endif // _TEST_TYPES_H_

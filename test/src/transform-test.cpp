@@ -8,7 +8,8 @@ TEST(repo, test_one_parent) {
 	auto squared(frp::push::transform([](int i) { return i * i; },
 		frp::push::transform([]() { return -1; })));
 	auto sink(frp::push::sink(std::ref(squared)));
-	ASSERT_EQ(*sink, 1);
+	auto reference(*sink);
+	ASSERT_EQ(*reference, 1);
 }
 
 TEST(repo, test_two_parents) {
@@ -18,15 +19,18 @@ TEST(repo, test_two_parents) {
 	auto multiplier(frp::push::transform([](auto i, auto j) { return i * j; }, std::ref(left),
 		std::ref(right)));
 	auto sink(frp::push::sink(std::ref(multiplier)));
-	ASSERT_EQ(*sink, -2);
+	auto reference(*sink);
+	ASSERT_EQ(*reference, -2);
 }
 
 TEST(repo, test_two_children) {
 	auto top(frp::push::transform([]() { return 2; }));
 	auto left(frp::push::sink(frp::push::transform([](auto i) { return -1 * i; }, std::ref(top))));
 	auto right(frp::push::sink(frp::push::transform([](auto i) { return 2 * i; }, std::ref(top))));
-	ASSERT_EQ(*left, -2);
-	ASSERT_EQ(*right, 4);
+	auto left_reference(*left);
+	auto right_reference(*right);
+	ASSERT_EQ(*left_reference, -2);
+	ASSERT_EQ(*right_reference, 4);
 }
 
 TEST(repo, test_diamond) {
@@ -35,7 +39,8 @@ TEST(repo, test_diamond) {
 		frp::push::transform([](auto i) { return 1 + i; }, std::ref(top)),
 		frp::push::transform([](auto i) { return short(2 + i); }, std::ref(top))));
 	auto sink(frp::push::sink(std::ref(bottom)));
-	ASSERT_EQ(*sink, 12);
+	auto reference(*sink);
+	ASSERT_EQ(*reference, 12);
 }
 
 TEST(repo, void_repository) {
@@ -60,7 +65,8 @@ TEST(repo, mutable_repository) {
 	auto right(frp::push::transform([](auto top) { return 2 * top; }, std::ref(top)));
 	auto sink(frp::push::sink(frp::push::transform(
 		[](auto a, auto b) { return std::make_pair(a, b); }, std::ref(left), std::ref(right))));
-	auto value(*sink);
+	auto reference(*sink);
+	auto value(*reference);
 	ASSERT_EQ(value.first, 15);
 	ASSERT_EQ(value.second, 10);
 }
@@ -91,7 +97,8 @@ TEST(transform, function_ptr) {
 	auto sink(frp::push::sink(
 		frp::push::transform(&foo, frp::push::source(short(13)),
 			frp::push::source(char(42)))));
-	ASSERT_EQ(*sink, 42 * 13);
+	auto reference(*sink);
+	ASSERT_EQ(*reference, 42 * 13);
 }
 
 TEST(transform, bind) {
@@ -99,7 +106,8 @@ TEST(transform, bind) {
 	auto transform(frp::push::transform(std::bind(&foo, short(5), std::placeholders::_1),
 		std::ref(source)));
 	auto sink(frp::push::sink(std::ref(transform)));
-	ASSERT_EQ(*sink, 42 * 5);
+	auto reference(*sink);
+	ASSERT_EQ(*reference, 42 * 5);
 }
 
 struct C {
@@ -120,15 +128,18 @@ TEST(transform, custom_comparator) {
 	auto source(frp::push::source(C{ 0, 0, }));
 	auto sink(frp::push::sink(frp::push::transform<C_comparator>(
 		[](auto c) { return c; }, std::ref(source))));
-	auto value1(*sink);
+	auto reference1(*sink);
+	auto value1(*reference1);
 	ASSERT_EQ(value1.a, 0);
 	ASSERT_EQ(value1.b, 0);
 	source = { 0, 1 };
-	auto value2(*sink);
+	auto reference2(*sink);
+	auto value2(*reference2);
 	ASSERT_EQ(value2.a, 0);
 	ASSERT_EQ(value2.b, 0);
 	source = { 1, 1 };
-	auto value3(*sink);
+	auto reference3(*sink);
+	auto value3(*reference3);
 	ASSERT_EQ(value3.a, 1);
 	ASSERT_EQ(value3.b, 1);
 }

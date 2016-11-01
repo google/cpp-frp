@@ -13,8 +13,6 @@ namespace push {
 template<typename T>
 struct sink_repository_type {
 
-	static_assert(std::is_copy_constructible<T>::value, "T must be copy constructible");
-
 	typedef T value_type;
 
 	template<typename DependencyT>
@@ -35,17 +33,33 @@ struct sink_repository_type {
 		DependencyT dependency;
 	};
 
-	operator bool() const {
-		return !!get();
-	}
+	struct reference {
+		std::shared_ptr<util::storage_type<T>> value;
 
-	auto operator*() const {
-		auto storage(get());
-		if (!storage) {
-			throw std::domain_error("value not available");
-		} else {
-			return storage->value;
+		operator bool() const {
+			return !!value;
 		}
+
+		const auto &operator*() const {
+			if (!value) {
+				throw std::domain_error("value not available");
+			}
+			else {
+				return value->value;
+			}
+		}
+
+		const auto operator->() const {
+			return &operator*();
+		}
+
+		operator const T &() const {
+			return operator*();
+		}
+	};
+
+	reference operator*() const {
+		return reference{ get() };
 	}
 
 	auto get() const {
@@ -84,6 +98,7 @@ struct sink_repository_type {
 template<typename Dependency>
 auto sink(Dependency &&dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type value_type;
+	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
 	return sink_repository_type<value_type>::make(std::forward<Dependency>(dependency));
 }
 

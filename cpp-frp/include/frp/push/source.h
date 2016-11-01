@@ -56,6 +56,31 @@ struct source_repository_type {
 		Comparator comparator;
 	};
 
+	struct reference {
+		std::shared_ptr<util::storage_type<T>> value;
+
+		operator bool() const {
+			return !!value;
+		}
+
+		const auto &operator*() const {
+			if (!value) {
+				throw std::domain_error("value not available");
+			}
+			else {
+				return value->value;
+			}
+		}
+
+		const auto operator->() const {
+			return &operator*();
+		}
+
+		operator const T &() const {
+			return operator*();
+		}
+	};
+
 	auto &operator=(T &&value) const {
 		storage->accept(std::make_shared<util::storage_type<T>>(std::forward<T>(value)));
 		return *this;
@@ -66,17 +91,8 @@ struct source_repository_type {
 		return *this;
 	}
 
-	operator bool() const {
-		return !!get();
-	}
-
-	auto operator*() const {
-		auto storage(get());
-		if (!storage) {
-			throw std::domain_error("value not available");
-		} else {
-			return storage->value;
-		}
+	reference operator*() const {
+		return reference{ get() };
 	}
 
 	auto get() const {

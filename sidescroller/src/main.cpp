@@ -216,7 +216,8 @@ int main(int argc, char *argv[]) {
 					case SDLK_LCTRL:
 					case SDLK_RCTRL:
 					{
-						auto temp(*arrows);
+						auto reference(*arrows);
+						auto temp(*reference);
 						temp.push_back(std::make_shared<instance_type>(controller.get()->character->position, main_character));
 						arrows = temp;
 					}

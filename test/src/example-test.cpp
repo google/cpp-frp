@@ -28,7 +28,8 @@ TEST(example, example1) {
 	auto print = sink(std::ref(strings));
 
 	// read the content of print
-	for (auto value : *print) {
+	auto values(*print);
+	for (auto value : *values) {
 		std::cout << value << " ";
 	}
 	std::cout << std::endl;
