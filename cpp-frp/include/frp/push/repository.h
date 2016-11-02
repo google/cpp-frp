@@ -15,7 +15,7 @@ namespace push {
 namespace impl {
 
 template<typename Storage, typename Generator, typename Comparator, typename... Ts>
-void evaluate(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
+void evaluate_repository(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 	const std::shared_ptr<util::observable_type> &observable, Generator &generator,
 	Comparator &comparator, const std::shared_ptr<Ts> &... values) {
 	if (util::all_true(values...)) {
@@ -52,7 +52,7 @@ auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
 		auto storage(weak_storage.lock());
 		if (storage) {
 			util::invoke([&](auto&... dependencies) {
-				impl::evaluate(storage, observable, generator, comparator,
+				impl::evaluate_repository(storage, observable, generator, comparator,
 					util::unwrap_reference(dependencies).get()...);
 			}, std::ref(*shared_dependencies));
 		}
