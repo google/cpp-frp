@@ -119,7 +119,7 @@ struct C {
 };
 
 struct C_comparator {
-	auto operator()(const C &lhs, const C &rhs) {
+	auto operator()(const C &lhs, const C &rhs) const {
 		return lhs.a == rhs.a;
 	}
 };

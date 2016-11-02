@@ -58,7 +58,7 @@ auto filter(Function function, Dependency dependency) {
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
 	typedef typename generator_type::collector_view_type collector_view_type;
-	return repository_type<collector_view_type>::make<typename generator_type::commit_storage_type,
+	return impl::make_repository<collector_view_type, typename generator_type::commit_storage_type,
 		std::equal_to<collector_view_type>>(generator_type(
 			std::move(internal::get_function(function)),
 			std::move(internal::get_executor(function))),

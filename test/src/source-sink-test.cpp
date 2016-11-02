@@ -30,8 +30,9 @@ TEST(source, undefined_access) {
 	ASSERT_THROW(**sink, std::domain_error);
 }
 
+// TODO(gardell): Remove
 struct odd_comparator {
-	auto operator()(int lhs, int rhs) {
+	auto operator()(int lhs, int rhs) const {
 		return lhs % 2 == rhs % 2;
 	}
 };

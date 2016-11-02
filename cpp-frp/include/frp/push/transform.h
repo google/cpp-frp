@@ -38,7 +38,7 @@ auto transform(Function function, Dependencies... dependencies) {
 	typedef implementation::transform_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependencies>::value_type...> generator_type;
-	return repository_type<value_type>::make<typename generator_type::commit_storage_type,
+	return impl::make_repository<value_type, typename generator_type::commit_storage_type,
 		Comparator>(generator_type(std::move(internal::get_function(function)),
 			std::move(internal::get_executor(function))),
 			std::forward<Dependencies>(dependencies)...);
