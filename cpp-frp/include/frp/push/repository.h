@@ -18,21 +18,20 @@ struct repository_type {
 
 	typedef T value_type;
 
-	template<typename GeneratorT, typename Comparator, typename... DependenciesT>
+	template<typename Storage, typename Generator, typename Comparator, typename... Dependencies>
 	struct template_storage_type
 		: util::storage_supplier_type<T>
 		, std::enable_shared_from_this<template_storage_type<
-			GeneratorT, Comparator, DependenciesT...>> {
+			Storage, Generator, Comparator, Dependencies...>> {
 
-		constexpr static std::size_t dependencies_size = sizeof...(DependenciesT);
-		typedef typename GeneratorT::commit_storage_type commit_storage_type;
+		constexpr static std::size_t dependencies_size = sizeof...(Dependencies);
 
 		std::shared_ptr<util::storage_type<T>> get() const final override {
 			return std::atomic_load(&value);
 		}
 
 		void evaluate() {
-			util::invoke([this](DependenciesT&... dependencies) {
+			util::invoke([this](Dependencies&... dependencies) {
 				evaluate_impl(util::unwrap_reference(dependencies).get()...);
 			}, std::ref(dependencies));
 		}
@@ -45,7 +44,7 @@ struct repository_type {
 				auto value(std::atomic_load(&value));
 				if (!value || value->is_newer(revisions)) {
 					generator([revisions, storage = shared_from_this()](
-						const std::shared_ptr<commit_storage_type> &commit) {
+						const std::shared_ptr<Storage> &commit) {
 						auto value(std::atomic_load(&storage->value));
 						do {
 							commit->revision = (value ? value->revision : util::default_revision) + 1;
@@ -56,34 +55,34 @@ struct repository_type {
 						} while (!std::atomic_compare_exchange_strong(&storage->value, &value,
 							commit));
 						storage->update();
-					}, revisions, value, values...);
+					}, value, values...);
 				}
 			}
 		}
 
-		template_storage_type(GeneratorT &&generator, DependenciesT &&... dependencies)
-			: dependencies(std::forward<DependenciesT>(dependencies)...)
-			, generator(std::forward<GeneratorT>(generator)) {}
+		template_storage_type(Generator &&generator, Dependencies &&... dependencies)
+			: dependencies(std::forward<Dependencies>(dependencies)...)
+			, generator(std::forward<Generator>(generator)) {}
 
-		std::shared_ptr<commit_storage_type> value; // Use atomics!
-		std::tuple<DependenciesT...> dependencies;
-		GeneratorT generator;
+		std::shared_ptr<Storage> value; // Use atomics!
+		std::tuple<Dependencies...> dependencies;
+		Generator generator;
 		Comparator comparator;
 	};
 
-	template<typename Comparator, typename GeneratorT, typename... DependenciesT>
-	static auto make(GeneratorT &&generator, DependenciesT &&... dependencies) {
+	template<typename Storage, typename Comparator, typename Generator, typename... Dependencies>
+	static auto make(Generator &&generator, Dependencies &&... dependencies) {
 		return repository_type(std::make_shared<template_storage_type<
-			GeneratorT, Comparator, DependenciesT...>>(std::forward<GeneratorT>(generator),
-				std::forward<DependenciesT>(dependencies)...));
+			Storage, Generator, Comparator, Dependencies...>>(
+				std::forward<Generator>(generator),
+				std::forward<Dependencies>(dependencies)...));
 	}
 
-	template<typename StorageT>
-	explicit repository_type(
-		const std::shared_ptr<StorageT> &storage)
+	template<typename Storage>
+	explicit repository_type(const std::shared_ptr<Storage> &storage)
 		: storage(storage)
 		, callbacks(util::vector_from_array(util::invoke(util::observe_all(
-			[storage, weak_storage = std::weak_ptr<StorageT>(storage)]() {
+			[storage, weak_storage = std::weak_ptr<Storage>(storage)]() {
 		auto storage(weak_storage.lock());
 		if (storage) {
 			storage->evaluate();

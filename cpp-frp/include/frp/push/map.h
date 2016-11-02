@@ -20,10 +20,10 @@ struct map_generator_type {
 	map_generator_type(F &&function, Executor &&executor)
 		: function(std::forward<F>(function)), executor(std::forward<Executor>(executor)) {}
 
-	template<typename CallbackT>
-	void operator()(CallbackT &&callback, revisions_type &revisions,
-		const std::shared_ptr<commit_storage_type> &previous,
-		const std::shared_ptr<util::storage_type<Input>> & storage) const {
+	template<typename Callback>
+	void operator()(Callback &&callback, const std::shared_ptr<commit_storage_type> &previous,
+			const std::shared_ptr<util::storage_type<Input>> & storage) const {
+		const revisions_type revisions{ storage->revision };
 		if (storage->value.empty()) {
 			callback(std::make_shared<commit_storage_type>(collector_view_type(collector_type(0)),
 				util::default_revision, revisions));
@@ -57,9 +57,10 @@ auto map(Function function, Dependency dependency) {
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
 	typedef typename generator_type::collector_view_type collector_view_type;
-	return repository_type<collector_view_type>::make<std::equal_to<collector_view_type>>(generator_type(
-		std::move(internal::get_function(function)), std::move(internal::get_executor(function))),
-		std::forward<Dependency>(dependency));
+	return repository_type<collector_view_type>::make<typename generator_type::commit_storage_type,
+		std::equal_to<collector_view_type>>(generator_type(
+			std::move(internal::get_function(function)),
+			std::move(internal::get_executor(function))), std::forward<Dependency>(dependency));
 }
 
 template<typename Function, typename Dependency>

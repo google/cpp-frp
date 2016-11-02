@@ -21,10 +21,10 @@ struct map_cache_generator_type {
 	map_cache_generator_type(F &&function, Executor &&executor)
 		: function(std::forward<F>(function)), executor(std::forward<Executor>(executor)) {}
 
-	template<typename CallbackT>
-	void operator()(CallbackT &&callback, revisions_type &revisions,
-		const std::shared_ptr<commit_storage_type> &previous,
-		const std::shared_ptr<util::storage_type<Input>> & storage) const {
+	template<typename Callback>
+	void operator()(Callback &&callback, const std::shared_ptr<commit_storage_type> &previous,
+			const std::shared_ptr<util::storage_type<Input>> & storage) const {
+		const revisions_type revisions{ storage->revision };
 		if (storage->value.empty()) {
 			callback(std::make_shared<commit_storage_type>(collector_view_type(collector_type(0)),
 				util::default_revision, revisions));
@@ -56,31 +56,29 @@ struct map_cache_generator_type {
 	Executor executor;
 };
 
-// TODO(gardell): Reuse
-template<typename F, typename D>
-using map_return_type = decltype(std::declval<F>()(
-	std::declval<const typename util::unwrap_t<D>::value_type::value_type &>()));
-
 }  // namespace implementation
 
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
 auto map_cache(Function function, Dependency dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
-	static_assert(std::is_copy_constructible<argument_type>::value, "Input type must be copy constructible");
-	typedef implementation::map_return_type<Function, Dependency> value_type;
-	static_assert(std::is_copy_constructible<value_type>::value, "Output must be copy constructible");
+	static_assert(std::is_copy_constructible<argument_type>::value,
+		"Input type must be copy constructible");
+	typedef util::map_return_type<Function, Dependency> value_type;
+	static_assert(std::is_copy_constructible<value_type>::value,
+		"Output must be copy constructible");
 	typedef implementation::map_cache_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator, Hash> generator_type;
 	typedef typename generator_type::collector_view_type collector_view_type;
-	return repository_type<collector_view_type>::make<std::equal_to<collector_view_type>>(generator_type(
-		std::move(internal::get_function(function)), std::move(internal::get_executor(function))),
-		std::forward<Dependency>(dependency));
+	return repository_type<collector_view_type>::make<typename generator_type::commit_storage_type,
+		std::equal_to<collector_view_type>>(generator_type(
+			std::move(internal::get_function(function)),
+			std::move(internal::get_executor(function))), std::forward<Dependency>(dependency));
 }
 
 template<typename Hash, typename Function, typename Dependency>
 auto map_cache(Function function, Dependency dependency) {
-	typedef implementation::map_return_type<Function, Dependency> value_type;
+	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");
 	return map_cache<std::equal_to<value_type>, Hash>(std::forward<Function>(function),

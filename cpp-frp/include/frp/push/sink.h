@@ -15,11 +15,11 @@ struct sink_repository_type {
 
 	typedef T value_type;
 
-	template<typename DependencyT>
+	template<typename Dependency>
 	struct template_storage_type : util::storage_supplier_type<T> {
 
-		explicit template_storage_type(DependencyT &&dependency)
-			: dependency(std::forward<DependencyT>(dependency)) {}
+		explicit template_storage_type(Dependency &&dependency)
+			: dependency(std::forward<Dependency>(dependency)) {}
 
 		std::shared_ptr<util::storage_type<T>> get() const final override {
 			return std::atomic_load(&value);
@@ -30,7 +30,7 @@ struct sink_repository_type {
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
-		DependencyT dependency;
+		Dependency dependency;
 	};
 
 	struct reference {
@@ -66,17 +66,17 @@ struct sink_repository_type {
 		return storage->get();
 	}
 
-	template<typename DependencyT>
-	static auto make(DependencyT &&dependency) {
-		return sink_repository_type(std::make_shared<template_storage_type<DependencyT>>(
-			std::forward<DependencyT>(dependency)));
+	template<typename Dependency>
+	static auto make(Dependency &&dependency) {
+		return sink_repository_type(std::make_shared<template_storage_type<Dependency>>(
+			std::forward<Dependency>(dependency)));
 	}
 
-	template<typename StorageT>
-	explicit sink_repository_type(const std::shared_ptr<StorageT> &storage)
+	template<typename Storage>
+	explicit sink_repository_type(const std::shared_ptr<Storage> &storage)
 		: storage(storage)
 		, callback(util::add_callback(util::unwrap_reference(storage->dependency),
-			[storage, weak_storage = std::weak_ptr<StorageT>(storage)]() {
+			[storage, weak_storage = std::weak_ptr<Storage>(storage)]() {
 				auto storage(weak_storage.lock());
 				if (storage) {
 					storage->evaluate();

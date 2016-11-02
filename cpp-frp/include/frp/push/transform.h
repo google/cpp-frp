@@ -17,13 +17,12 @@ struct transform_generator_type {
 	transform_generator_type(F &&function, Executor &&executor)
 		: function(std::forward<F>(function)), executor(std::forward<Executor>(executor)) {}
 
-	template<typename CallbackT>
-	void operator()(CallbackT &&callback, revisions_type &revisions,
-		const std::shared_ptr<commit_storage_type> &previous,
-		const std::shared_ptr<util::storage_type<Ts>> &... storage) const {
+	template<typename Callback>
+	void operator()(Callback &&callback, const std::shared_ptr<commit_storage_type> &previous,
+			const std::shared_ptr<util::storage_type<Ts>> &... storage) const {
 		executor([=, callback = std::move(callback)]() {
 			callback(commit_storage_type::make(std::bind(function, std::cref(storage->value)...),
-				revisions));
+				revisions_type{ storage->revision... }));
 		});
 	}
 
@@ -39,10 +38,10 @@ auto transform(Function function, Dependencies... dependencies) {
 	typedef implementation::transform_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependencies>::value_type...> generator_type;
-	return repository_type<value_type>::make<Comparator>(
-		generator_type(std::move(internal::get_function(function)),
+	return repository_type<value_type>::make<typename generator_type::commit_storage_type,
+		Comparator>(generator_type(std::move(internal::get_function(function)),
 			std::move(internal::get_executor(function))),
-		std::forward<Dependencies>(dependencies)...);
+			std::forward<Dependencies>(dependencies)...);
 }
 
 template<typename Function, typename... Dependencies>
