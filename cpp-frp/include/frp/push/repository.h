@@ -14,53 +14,64 @@ namespace frp {
 namespace push {
 namespace impl {
 
+template<typename Commit, typename Comparator, typename Revisions>
+void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
+		const std::shared_ptr<util::observable_type> &observable,
+		const Comparator &comparator, const Revisions &revisions,
+		const std::shared_ptr<Commit> &commit) {
+	auto value(std::atomic_load(&*previous));
+	bool exchanged(false);
+	do {
+		commit->revision = (value ? value->revision : util::default_revision) + 1;
+	} while ((!value || (value->is_newer(revisions) && !commit->compare_value(*value, comparator)))
+		&& !(exchanged = std::atomic_compare_exchange_strong(&*previous, &value, commit)));
+	if (exchanged) {
+		observable->update();
+	}
+}
+
 template<typename Storage, typename Generator, typename Comparator, typename... Ts>
-void evaluate_repository(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
+void attempt_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 	const std::shared_ptr<util::observable_type> &observable, Generator &generator,
-	Comparator &comparator, const std::shared_ptr<Ts> &... values) {
-	if (util::all_true(values...)) {
-		std::array<util::revision_type, sizeof...(Ts)> revisions{
-			values->revision... };
+	Comparator &comparator, const std::shared_ptr<Ts> &... dependencies) {
+	if (util::all_true(dependencies...)) {
+		typedef std::array<util::revision_type, sizeof...(Ts)> revisions_type;
+		revisions_type revisions{ dependencies->revision... };
 		auto value(std::atomic_load(&*storage));
 		if (!value || value->is_newer(revisions)) {
-			generator([revisions, storage, observable, comparator](const auto &commit) {
-				auto value(std::atomic_load(&*storage));
-				do {
-					commit->revision = (value ? value->revision : util::default_revision) + 1;
-					if (value && (!value->is_newer(revisions)
-						|| commit->compare_value(*value, comparator))) {
-						return;
-					}
-				} while (!std::atomic_compare_exchange_strong(&*storage, &value, commit));
-				observable->update();
-			}, value, values...);
+			generator(std::bind(&submit_commit<Storage, Comparator, revisions_type>, storage,
+				observable, comparator, revisions, std::placeholders::_1), value, dependencies...);
 		}
+	}
+}
+
+template<typename Storage, typename Generator, typename Comparator, typename... Dependencies>
+void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> weak_storage,
+		Generator &generator, Comparator &comparator,
+		const std::shared_ptr<util::observable_type> &observable,
+		const std::shared_ptr<std::tuple<Dependencies...>> &dependencies) {
+	auto storage(weak_storage.lock());
+	if (storage) {
+		util::invoke([&](Dependencies&... dependencies) {
+			attempt_commit(storage, observable, generator, comparator,
+				util::unwrap_reference(dependencies).get()...);
+		}, std::ref(*dependencies));
 	}
 }
 
 template<typename T, typename Storage, typename Comparator, typename Generator,
 	typename... Dependencies>
 auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
-	typedef std::shared_ptr<Storage> storage_type;
-	auto storage(std::make_shared<storage_type>());
+	auto storage(std::make_shared<std::shared_ptr<Storage>>());
 	auto observable(std::make_shared<util::observable_type>());
 	auto shared_dependencies(std::make_shared<std::tuple<Dependencies...>>(
 		std::forward<Dependencies>(dependencies)...));
-	auto update([weak_storage = std::weak_ptr<storage_type>(storage),
-		generator = std::forward<Generator>(generator),
-		comparator = Comparator(), shared_dependencies, observable]() {
-		auto storage(weak_storage.lock());
-		if (storage) {
-			util::invoke([&](auto&... dependencies) {
-				impl::evaluate_repository(storage, observable, generator, comparator,
-					util::unwrap_reference(dependencies).get()...);
-			}, std::ref(*shared_dependencies));
-		}
-	});
-	repository_type<T> repository(observable, update, [=]() {
-		return std::atomic_load(&*storage);
-	}, shared_dependencies);
-	update();
+	auto callback(std::bind(&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
+		std::weak_ptr<std::shared_ptr<Storage>>(storage), std::forward<Generator>(generator),
+		Comparator(), observable, shared_dependencies));
+	auto provider([=]() { return std::atomic_load(&*storage); });
+	repository_type<T> repository(observable, callback, provider, shared_dependencies);
+	callback();
 	return repository;
 }
 
