@@ -1,6 +1,8 @@
 #include <atomic>
 #include <cache.h>
 #include <frp/push/map.h>
+#include <frp/push/map_cache.h>
+#include <frp/push/sink.h>
 #include <frp/push/source.h>
 #include <frp/push/transform.h>
 #include <geometry.h>
@@ -84,37 +86,6 @@ struct dynamic_body_type {
 	}
 };
 
-template<typename T>
-struct sink_type {
-
-	std::shared_ptr<T> current; // atomic
-	frp::push::repository_type<void> receiver;
-	typedef std::function<void(const T &)> function_type;
-	function_type function;
-
-	template<typename F, typename Supplier>
-	sink_type(F &&function, Supplier supplier)
-		: function(std::forward<F>(function))
-		, receiver(frp::push::transform([this](const auto &value) {
-			std::atomic_store(&current, std::make_shared<T>(value));
-		}, supplier)) {}
-
-	void operator()() const {
-		auto current(std::atomic_load(&current));
-		if (current) {
-			function(*current);
-		}
-	}
-
-	operator bool() const {
-		return !!std::atomic_load(&current);
-	}
-
-	T &get() const {
-		return *std::atomic_load(&current);
-	}
-};
-
 int main(int argc, char *argv[]) {
 	if (SDL_Init(SDL_INIT_VIDEO) != 0) {
 		std::cout << "SDL_Init Error: " << SDL_GetError() << std::endl;
@@ -147,33 +118,21 @@ int main(int argc, char *argv[]) {
 		},
 		std::ref(character)));
 
-	sink_type<std::shared_ptr<dynamic_body_type>> controller(
-		[](auto dynamic) {}, std::ref(dynamic));
+	auto controller(frp::push::sink(std::ref(dynamic)));
 
 	auto arrows(frp::push::source(std::vector<std::shared_ptr<instance_type>>()));
 
-	// TODO(gardell): This must be a cached map where we reuse previous instances so we don't reset the velocity.
-	auto dynamic_arrows(frp::push::map([](auto arrow) {
+	auto dynamic_arrows(frp::push::map_cache([](auto arrow) {
 		return std::make_shared<dynamic_body_type>(arrow, point_type{ 20, 0 });
 	}, std::ref(arrows)));
 
-	auto dynamics(frp::push::transform(
-		[](auto dynamic, const auto &dynamics) {
-			std::vector<std::shared_ptr<dynamic_body_type>> vector(dynamics.begin(), dynamics.end());
-			vector.push_back(dynamic);
-			return vector;
-		},
-		std::ref(dynamic), std::ref(dynamic_arrows)));
-
-	sink_type<std::vector<std::shared_ptr<dynamic_body_type>>> integrator(
-		[&, previous = SDL_GetTicks()](auto dynamics) mutable {
-			auto current(SDL_GetTicks());
-			auto delta(current - previous);
-			previous = current;
-			for (const auto dynamic : dynamics) {
-				dynamic->integrate(delta);
-			}
-		}, std::ref(dynamics));
+	auto dynamics(frp::push::sink(frp::push::transform([](auto dynamic, const auto &dynamics) {
+		std::vector<std::shared_ptr<dynamic_body_type>> vector;
+		vector.reserve(1 + dynamics.size());
+		vector.assign(dynamics.begin(), dynamics.end());
+		vector.push_back(dynamic);
+		return vector;
+	}, std::ref(dynamic), std::ref(dynamic_arrows))));
 
 	auto characters(frp::push::transform(
 		[](auto character, auto arrows) {
@@ -183,18 +142,13 @@ int main(int argc, char *argv[]) {
 		},
 		std::ref(character), std::ref(arrows)));
 
-	auto sprites(frp::push::map(
+	auto sprites(frp::push::sink(frp::push::map(
 		[&](auto character) {
 			return sprite_type{ character, image_cache(character->resource.sprite_filename) };
 		},
-		std::ref(characters)));
+		std::ref(characters))));
 
-	sink_type<frp::vector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
-		for (const auto &sprite : sprites) {
-			draw(ren, sprite);
-		}
-	}, std::ref(sprites));
-
+	auto previous = SDL_GetTicks();
 	SDL_Event e;
 	while (true) {
 		while (SDL_PollEvent(&e)) {
@@ -202,23 +156,23 @@ int main(int argc, char *argv[]) {
 			case SDL_QUIT:
 				return 0;
 			case SDL_KEYDOWN:
-				if (controller && !e.key.repeat) {
+				if (*controller && !e.key.repeat) {
 					switch (e.key.keysym.sym) {
 					case SDLK_SPACE:
-						controller.get()->add_velocity({ 0, -jump_velocity });
+						(**controller)->add_velocity({ 0, -jump_velocity });
 						break;
 					case SDLK_LEFT:
-						controller.get()->add_velocity({ -walk_speed, 0 });
+						(**controller)->add_velocity({ -walk_speed, 0 });
 						break;
 					case SDLK_RIGHT:
-						controller.get()->add_velocity({ walk_speed, 0 });
+						(**controller)->add_velocity({ walk_speed, 0 });
 						break;
 					case SDLK_LCTRL:
 					case SDLK_RCTRL:
 					{
 						auto reference(*arrows);
 						auto temp(*reference);
-						temp.push_back(std::make_shared<instance_type>(controller.get()->character->position, main_character));
+						temp.push_back(std::make_shared<instance_type>((**controller)->character->position, main_character));
 						arrows = temp;
 					}
 						break;
@@ -230,9 +184,23 @@ int main(int argc, char *argv[]) {
 			}
 		}
 
-		integrator();
+		auto dynamics_value(*dynamics);
+		if (dynamics_value) {
+			auto current(SDL_GetTicks());
+			auto delta(current - previous);
+			previous = current;
+			for (const auto dynamic : *dynamics_value) {
+				dynamic->integrate(delta);
+			}
+		}
+
 		SDL_RenderClear(ren.get());
-		renderer();
+		auto sprites_value(*sprites);
+		if (sprites_value) {
+			for (const auto &sprite : *sprites_value) {
+				draw(ren, sprite);
+			}
+		}
 		SDL_RenderPresent(ren.get());
 	}
 
