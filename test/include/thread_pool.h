@@ -1,5 +1,5 @@
-#ifndef _FRP_UTIL_THREAD_POOL_H_
-#define _FRP_UTIL_THREAD_POOL_H_
+#ifndef _THREAD_POOL_H_
+#define _THREAD_POOL_H_
 
 #include <frp/util/task_queue.h>
 #include <condition_variable>
@@ -91,4 +91,4 @@ private:
 } // namespace util
 } // namespace frp
 
-#endif // _FRP_UTIL_THREAD_POOL_H_
+#endif // _THREAD_POOL_H_

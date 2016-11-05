@@ -34,8 +34,6 @@
     <ClInclude Include="include\frp\util\observe_all.h" />
     <ClInclude Include="include\frp\util\reference.h" />
     <ClInclude Include="include\frp\util\storage.h" />
-    <ClInclude Include="include\frp\util\task_queue.h" />
-    <ClInclude Include="include\frp\util\thread_pool.h" />
     <ClInclude Include="include\frp\util\variadic.h" />
     <ClInclude Include="include\frp\util\vector.h" />
     <ClInclude Include="include\frp\vector_view.h" />

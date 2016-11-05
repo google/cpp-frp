@@ -1,5 +1,5 @@
-#ifndef _FRP_UTIL_TASK_QUEUE_H_
-#define _FRP_UTIL_TASK_QUEUE_H_
+#ifndef _TASK_QUEUE_H_
+#define _TASK_QUEUE_H_
 
 #include <functional>
 #include <future>
@@ -86,4 +86,4 @@ private:
 } // namespace util
 } // namespace frp
 
-#endif // 
+#endif // _TASK_QUEUE_H_

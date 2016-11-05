@@ -173,7 +173,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\array_util.h" />
+    <ClInclude Include="include\task_queue.h" />
     <ClInclude Include="include\test_types.h" />
+    <ClInclude Include="include\thread_pool.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

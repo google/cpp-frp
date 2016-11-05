@@ -63,12 +63,6 @@
     <ClInclude Include="include\frp\push\filter.h">
       <Filter>Header Files\push</Filter>
     </ClInclude>
-    <ClInclude Include="include\frp\util\thread_pool.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
-    <ClInclude Include="include\frp\util\task_queue.h">
-      <Filter>Header Files\util</Filter>
-    </ClInclude>
     <ClInclude Include="include\frp\push\source.h">
       <Filter>Header Files\push</Filter>
     </ClInclude>

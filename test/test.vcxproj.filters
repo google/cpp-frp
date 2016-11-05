@@ -47,5 +47,11 @@
     <ClInclude Include="include\test_types.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="include\task_queue.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\thread_pool.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
