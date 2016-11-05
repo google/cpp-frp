@@ -50,7 +50,7 @@ struct map_generator_type {
 }  // namespace implementation
 
 template<typename Comparator, typename Function, typename Dependency>
-auto map(Function function, Dependency dependency) {
+auto map(Function &&function, Dependency dependency) {
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
 	typedef implementation::map_generator_type<value_type,
@@ -64,7 +64,7 @@ auto map(Function function, Dependency dependency) {
 }
 
 template<typename Function, typename Dependency>
-auto map(Function function, Dependency dependency) {
+auto map(Function &&function, Dependency dependency) {
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");

@@ -31,7 +31,7 @@ void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
 }
 
 template<typename Storage, typename Generator, typename Comparator, typename... Ts>
-void attempt_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
+void generate_attempt_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 	const std::shared_ptr<util::observable_type> &observable, Generator &generator,
 	Comparator &comparator, const std::shared_ptr<Ts> &... dependencies) {
 	if (util::all_true(dependencies...)) {
@@ -53,7 +53,7 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> weak_
 	auto storage(weak_storage.lock());
 	if (storage) {
 		util::invoke([&](Dependencies&... dependencies) {
-			attempt_commit(storage, observable, generator, comparator,
+			generate_attempt_commit(storage, observable, generator, comparator,
 				util::unwrap_reference(dependencies).get()...);
 		}, std::ref(*dependencies));
 	}
@@ -83,10 +83,6 @@ struct repository_type {
 	typedef T value_type;
 
 	repository_type() = default;
-	repository_type(const repository_type &) = delete;
-	repository_type(repository_type &&) = default;
-	repository_type &operator=(const repository_type &) = delete;
-	repository_type &operator=(repository_type &&) = default;
 
 	// TODO(gardell): Make private, all usage must be through make
 	template<typename Update, typename Provider, typename... Dependencies>

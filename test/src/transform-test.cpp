@@ -143,3 +143,8 @@ TEST(transform, custom_comparator) {
 	ASSERT_EQ(value3.a, 1);
 	ASSERT_EQ(value3.b, 1);
 }
+
+TEST(transform, assignment) {
+	frp::push::repository_type<int> repository;
+	repository = frp::push::transform([]() { return 0; });
+}

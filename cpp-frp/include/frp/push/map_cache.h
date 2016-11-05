@@ -59,7 +59,7 @@ struct map_cache_generator_type {
 }  // namespace implementation
 
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
-auto map_cache(Function function, Dependency dependency) {
+auto map_cache(Function &&function, Dependency dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
 	static_assert(std::is_copy_constructible<argument_type>::value,
 		"Input type must be copy constructible");
@@ -77,7 +77,7 @@ auto map_cache(Function function, Dependency dependency) {
 }
 
 template<typename Hash, typename Function, typename Dependency>
-auto map_cache(Function function, Dependency dependency) {
+auto map_cache(Function &&function, Dependency dependency) {
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");
@@ -86,7 +86,7 @@ auto map_cache(Function function, Dependency dependency) {
 }
 
 template<typename Function, typename Dependency>
-auto map_cache(Function function, Dependency dependency) {
+auto map_cache(Function &&function, Dependency dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
 	return map_cache<std::hash<argument_type>>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
