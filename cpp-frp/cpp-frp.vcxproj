@@ -38,7 +38,7 @@
     <ClInclude Include="include\frp\util\thread_pool.h" />
     <ClInclude Include="include\frp\util\variadic.h" />
     <ClInclude Include="include\frp\util\vector.h" />
-    <ClInclude Include="include\frp\util\vector_view.h" />
+    <ClInclude Include="include\frp\vector_view.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <ProjectGuid>{F5954F51-B9AB-4813-AFA0-4E663D12D831}</ProjectGuid>

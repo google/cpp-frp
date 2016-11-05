@@ -3,7 +3,7 @@
 
 #include <frp/push/repository.h>
 #include <frp/util/collector.h>
-#include <frp/util/vector_view.h>
+#include <frp/vector_view.h>
 #include <vector>
 
 namespace frp {
@@ -13,7 +13,7 @@ namespace implementation {
 template<typename T, typename F, typename Executor, typename Input, typename Comparator>
 struct filter_generator_type {
 	typedef util::append_collector_type<T, Comparator> collector_type;
-	typedef util::vector_view_type<T, Comparator> collector_view_type;
+	typedef vector_view_type<T, Comparator> collector_view_type;
 	typedef util::commit_storage_type<collector_view_type, 1> commit_storage_type;
 	typedef typename commit_storage_type::revisions_type revisions_type;
 

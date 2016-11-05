@@ -78,8 +78,8 @@
     <ClInclude Include="include\frp\push\map_cache.h">
       <Filter>Header Files\push</Filter>
     </ClInclude>
-    <ClInclude Include="include\frp\util\vector_view.h">
-      <Filter>Header Files\util</Filter>
+    <ClInclude Include="include\frp\vector_view.h">
+      <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

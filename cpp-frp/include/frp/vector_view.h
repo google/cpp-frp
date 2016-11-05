@@ -1,12 +1,11 @@
-#ifndef _FRP_UTIL_VECTOR_VIEW_H_
-#define _FRP_UTIL_VECTOR_VIEW_H_
+#ifndef _FRP_VECTOR_VIEW_H_
+#define _FRP_VECTOR_VIEW_H_
 
 #include <atomic>
 #include <cassert>
 #include <frp/util/collector.h>
 
 namespace frp {
-namespace util {
 
 template<typename T, typename Comparator, typename Allocator, bool CopyConstructible>
 struct vector_view_type_impl;
@@ -14,7 +13,7 @@ struct vector_view_type_impl;
 template<typename T, typename Comparator, typename Allocator>
 struct vector_view_type_impl<T, Comparator, Allocator, false> {
 
-	typedef array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, false>,
+	typedef util::array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, false>,
 		Allocator> deleter_type;
 	typedef std::unique_ptr<T[], deleter_type> storage_type;
 	typedef std::size_t size_type;
@@ -57,7 +56,7 @@ struct vector_view_type_impl<T, Comparator, Allocator, false> {
 template<typename T, typename Comparator, typename Allocator>
 struct vector_view_type_impl<T, Comparator, Allocator, true> {
 
-	typedef array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, true>,
+	typedef util::array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, true>,
 		Allocator> deleter_type;
 	typedef std::unique_ptr<T[], deleter_type> storage_type;
 	typedef std::size_t size_type;
@@ -226,13 +225,13 @@ struct vector_view_type : vector_view_type_impl<T, Comparator, Allocator, std::i
 	typedef std::reverse_iterator<iterator> reverse_iterator;
 	typedef std::reverse_iterator<const_iterator> const_reverse_iterator;
 
-	explicit vector_view_type(fixed_size_collector_type<T, Comparator, Allocator> &&collector)
+	explicit vector_view_type(util::fixed_size_collector_type<T, Comparator, Allocator> &&collector)
 		: parent_type(std::move(collector.storage), std::move(collector.comparator),
 			std::move(collector.allocator), collector.storage_size, collector.capacity) {
 		assert(storage_size == collector.capacity);
 	}
 
-	explicit vector_view_type(append_collector_type<T, Comparator, Allocator> &&collector)
+	explicit vector_view_type(util::append_collector_type<T, Comparator, Allocator> &&collector)
 		: parent_type(std::move(collector.storage), std::move(collector.comparator),
 			std::move(collector.allocator), collector.storage_size, collector.capacity) {
 		assert(capacity == collector.counter);
@@ -272,7 +271,6 @@ struct vector_view_type : vector_view_type_impl<T, Comparator, Allocator, std::i
 	}
 };
 
-} // namespace util
 } // namespace frp
 
-#endif // _FRP_UTIL_VECTOR_VIEW_H_
+#endif // _FRP_VECTOR_VIEW_H_

@@ -189,7 +189,7 @@ int main(int argc, char *argv[]) {
 		},
 		std::ref(characters)));
 
-	sink_type<frp::util::vector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
+	sink_type<frp::vector_view_type<sprite_type>> renderer([&ren](const auto &sprites) {
 		for (const auto &sprite : sprites) {
 			draw(ren, sprite);
 		}
