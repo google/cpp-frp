@@ -26,8 +26,9 @@ auto strings = map([](auto i) { return std::to_string(i); }, std::ref(filtered))
 auto print = sink(std::ref(strings));
 
 // read the content of print
-for (auto value : *print) {
-       std::cout << value << " ";
+auto values(*print);
+for (auto value : *values) {
+	std::cout << value << " ";
 }
 std::cout << std::endl;
 
@@ -51,9 +52,9 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 The requirements for value types are as follows:
 
  - Must be *move constructible*
-  * If used with ```sink``` it must be *copy constructible*
- - Unless a custom *comparator* is used with ```map```, ```transform``` or ```source```:
-  * Implement the equality comparator ```auto T::operator==(const T &)``` or equivalent
+  * If used with ```map_cache``` input type must be *copy constructible*
+ - Unless a custom *comparator* is used with ```transform```, ```map```, ```map_cache``` or ```source```:
+  * Implement the equality comparator ```auto T::operator==(const T &) const``` or equivalent
 
 ### Function types
 Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well.
@@ -61,7 +62,7 @@ Functions must implement the ```operator()``` with the argument types relevant. 
 Functions can return ```void``` for ```transform```, the function will be executed on any dependency changes but the resulting repository becomes a leaf-node and can not be used by any other repository.
 
 #### Thread safety
-Functions are expected to have **no side-effects** and only operate on their input arguments. That said, in order to interface with other code that might be a too strict requirement. This library uses atomics to synchronize logic, which means that in theory, at any point, there might be multiple invocations of your function running in parallell.
+Functions are expected to have **no side-effects** and only operate on their input arguments. That said, in order to interface with other code that might be a too strict requirement. This library uses atomics to synchronize logic, which means that in theory, at any point, there might be multiple invocations of your function running in parallell. The values returned by functions are guaranteed to arrive in the correct order, the invocation of functions are not.
 
 There are two ways to manage functions with side effects:
  - Specify a single threaded executor with ```execute_on(...)```. This way the execution of your function will be serialized.
