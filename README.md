@@ -53,7 +53,8 @@ The requirements for value types are as follows:
 
  - Must be *move constructible*
   * If used with ```map_cache``` input type must be *copy constructible*
- - Unless a custom *comparator* is used with ```transform```, ```map```, ```map_cache``` or ```source```:
+  * If used with ```filter``` type must be *copy constructible*
+ - Unless a custom *comparator* is used with ```transform```, ```filter```, ```map```, ```map_cache``` or ```source```:
   * Implement the equality comparator ```auto T::operator==(const T &) const``` or equivalent
 
 ### Function types
