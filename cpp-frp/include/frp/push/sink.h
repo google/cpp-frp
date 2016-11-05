@@ -98,7 +98,8 @@ struct sink_repository_type {
 template<typename Dependency>
 auto sink(Dependency &&dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type value_type;
-	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible.");
 	return sink_repository_type<value_type>::make(std::forward<Dependency>(dependency));
 }
 

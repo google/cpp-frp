@@ -61,11 +61,14 @@ struct map_cache_generator_type {
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
 auto map_cache(Function &&function, Dependency dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
-	static_assert(std::is_copy_constructible<argument_type>::value,
-		"Input type must be copy constructible");
 	typedef util::map_return_type<Function, Dependency> value_type;
+	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
+	static_assert(std::is_copy_constructible<argument_type>::value,
+		"Dependency type must be copy constructible");
 	static_assert(std::is_copy_constructible<value_type>::value,
-		"Output must be copy constructible");
+		"T must be copy constructible");
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+
 	typedef implementation::map_cache_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator, Hash> generator_type;

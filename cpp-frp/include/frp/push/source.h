@@ -109,24 +109,28 @@ struct source_repository_type {
 
 template<typename Comparator, typename T>
 auto source() {
+	static_assert(!std::is_void<T>::value, "T must not be void type.");
 	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
 	return source_repository_type<T>::make<Comparator>();
 }
 
 template<typename Comparator, typename T>
 auto source(T &&value) {
+	static_assert(!std::is_void<T>::value, "T must not be void type.");
 	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
 	return source_repository_type<T>::make<Comparator>(std::forward<T>(value));
 }
 
 template<typename T>
 auto source() {
+	static_assert(!std::is_void<T>::value, "T must not be void type.");
 	static_assert(util::is_equality_comparable<T>::value, "T must implement equality comparator");
 	return source<std::equal_to<T>, T>();
 }
 
 template<typename T>
 auto source(T &&value) {
+	static_assert(!std::is_void<T>::value, "T must not be void type.");
 	static_assert(util::is_equality_comparable<T>::value, "T must implement equality comparator");
 	return source<std::equal_to<T>, T>(std::forward<T>(value));
 }

@@ -51,8 +51,13 @@ struct map_generator_type {
 
 template<typename Comparator, typename Function, typename Dependency>
 auto map(Function &&function, Dependency dependency) {
+	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
 	typedef util::map_return_type<Function, Dependency> value_type;
-	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
+	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
+	static_assert(std::is_move_constructible<value_type>::value,
+		"T must be move constructible");
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+
 	typedef implementation::map_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;

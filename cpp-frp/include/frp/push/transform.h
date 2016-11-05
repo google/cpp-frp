@@ -8,6 +8,11 @@ namespace push {
 
 template<typename Comparator, typename Function, typename... Dependencies>
 auto transform(Function &&function, Dependencies... dependencies) {
+
+	static_assert(util::all_true_type<typename util::is_not_void<
+		typename util::unwrap_t<Dependencies>::value_type>::type...>::value,
+			"Dependencies can not be void type.");
+
 	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	typedef util::commit_storage_type<value_type, sizeof...(Dependencies)> commit_storage_type;
 

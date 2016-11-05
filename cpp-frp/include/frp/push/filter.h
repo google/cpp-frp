@@ -53,7 +53,8 @@ struct filter_generator_type {
 template<typename Comparator, typename Function, typename Dependency>
 auto filter(Function function, Dependency dependency) {
 	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
-	static_assert(std::is_copy_constructible<value_type>::value, "T must be copy constructible");
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+	static_assert(std::is_copy_constructible<value_type>::value, "T must be copy constructible.");
 	typedef implementation::filter_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
 		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
