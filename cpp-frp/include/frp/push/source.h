@@ -21,6 +21,12 @@ struct source_repository_type {
 	}
 
 	template<typename Comparator>
+	static auto make(const T &value) {
+		return source_repository_type<T>(std::make_unique<template_storage_type<Comparator>>(
+			value));
+	}
+
+	template<typename Comparator>
 	static auto make() {
 		return source_repository_type<T>(std::make_unique<template_storage_type<Comparator>>());
 	}
@@ -38,6 +44,8 @@ struct source_repository_type {
 		template_storage_type() = default;
 		explicit template_storage_type(T &&value) : value(std::make_shared<util::storage_type<T>>(
 			std::forward<T>(value), util::default_revision)) {}
+		explicit template_storage_type(const T &value)
+			: value(std::make_shared<util::storage_type<T>>(value, util::default_revision)) {}
 
 		std::shared_ptr<util::storage_type<T>> get() const override final {
 			return std::atomic_load(&value);
@@ -107,32 +115,62 @@ struct source_repository_type {
 	std::unique_ptr<storage_type> storage;
 };
 
+namespace details {
+
+template<typename T>
+struct source_type_requirements_type {
+
+	typedef std::decay_t<T> value_type;
+
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
+};
+
+template<typename T>
+struct source_type_equality_requirements_type : source_type_requirements_type<T> {
+
+	typedef std::decay_t<T> value_type;
+
+	static_assert(util::is_equality_comparable<value_type>::value,
+		"T must implement equality comparator");
+};
+
+} // namespace details
+
 template<typename Comparator, typename T>
 auto source() {
-	static_assert(!std::is_void<T>::value, "T must not be void type.");
-	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
-	return source_repository_type<T>::make<Comparator>();
+	typedef typename details::source_type_requirements_type<T>::value_type value_type;
+	return source_repository_type<value_type>::make<Comparator>();
 }
 
 template<typename Comparator, typename T>
 auto source(T &&value) {
-	static_assert(!std::is_void<T>::value, "T must not be void type.");
-	static_assert(std::is_move_constructible<T>::value, "T must be move constructible");
-	return source_repository_type<T>::make<Comparator>(std::forward<T>(value));
+	typedef typename details::source_type_requirements_type<T>::value_type value_type;
+	return source_repository_type<value_type>::make<Comparator>(std::forward<T>(value));
+}
+
+template<typename Comparator, typename T>
+auto source(const T &value) {
+	typedef typename details::source_type_requirements_type<T>::value_type value_type;
+	return source_repository_type<value_type>::make<Comparator>(value);
 }
 
 template<typename T>
 auto source() {
-	static_assert(!std::is_void<T>::value, "T must not be void type.");
-	static_assert(util::is_equality_comparable<T>::value, "T must implement equality comparator");
-	return source<std::equal_to<T>, T>();
+	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
+	return source<std::equal_to<value_type>, T>();
 }
 
 template<typename T>
 auto source(T &&value) {
-	static_assert(!std::is_void<T>::value, "T must not be void type.");
-	static_assert(util::is_equality_comparable<T>::value, "T must implement equality comparator");
-	return source<std::equal_to<T>, T>(std::forward<T>(value));
+	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
+	return source<std::equal_to<value_type>, T>(std::forward<T>(value));
+}
+
+template<typename T>
+auto source(const T &value) {
+	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
+	return source<std::equal_to<value_type>, T>(value);
 }
 
 } // namespace push
