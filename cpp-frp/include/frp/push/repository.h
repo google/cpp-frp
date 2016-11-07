@@ -12,7 +12,7 @@
 
 namespace frp {
 namespace push {
-namespace impl {
+namespace details {
 
 template<typename Commit, typename Comparator, typename Revisions>
 void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
@@ -75,7 +75,7 @@ auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
 	return repository;
 }
 
-} // namespace impl
+} // namespace details
 
 template<typename T>
 struct repository_type {

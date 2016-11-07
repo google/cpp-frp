@@ -16,7 +16,7 @@ auto transform(Function &&function, Dependencies... dependencies) {
 	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	typedef util::commit_storage_type<value_type, sizeof...(Dependencies)> commit_storage_type;
 
-	return impl::make_repository<value_type, commit_storage_type, Comparator>(
+	return details::make_repository<value_type, commit_storage_type, Comparator>(
 		[function = std::forward<Function>(function)](
 			auto &&callback, const auto &, const auto &... storage) {
 		internal::get_executor(function)([=, callback = std::move(callback)]() {

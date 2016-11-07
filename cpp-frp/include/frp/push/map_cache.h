@@ -39,7 +39,7 @@ auto map_cache(Function &&function, Dependency dependency) {
 	typedef vector_view_type<value_type, Comparator> collector_view_type;
 	typedef details::map_cache_commit_storage_type<argument_type, value_type, collector_view_type,
 		Hash> commit_storage_type;
-	return impl::make_repository<collector_view_type, commit_storage_type,
+	return details::make_repository<collector_view_type, commit_storage_type,
 		std::equal_to<collector_view_type>>([
 			function = std::move(internal::get_function(function)),
 			executor = std::move(internal::get_executor(function))](
