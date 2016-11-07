@@ -4,79 +4,82 @@
 #include <frp/push/repository.h>
 #include <frp/util/collector.h>
 #include <frp/vector_view.h>
+#include <unordered_map>
 #include <vector>
 
 namespace frp {
 namespace push {
-namespace implementation {
+namespace details {
 
-template<typename T, typename F, typename Executor, typename Input, typename Comparator, typename Hash>
-struct map_cache_generator_type {
-	typedef util::fixed_size_collector_type<T, Comparator> collector_type;
-	typedef vector_view_type<T, Comparator> collector_view_type;
-	typedef util::map_cache_commit_storage_type<typename Input::value_type, T, collector_view_type,
-		Hash, 1> commit_storage_type;
-	typedef typename commit_storage_type::revisions_type revisions_type;
+template<typename K, typename V, typename Container, typename Hash>
+struct map_cache_commit_storage_type : util::commit_storage_type<Container, 1> {
 
-	map_cache_generator_type(F &&function, Executor &&executor)
-		: function(std::forward<F>(function)), executor(std::forward<Executor>(executor)) {}
+	typedef std::unordered_map<K, std::reference_wrapper<const V>, Hash> cache_type;
+	cache_type cache;
 
-	template<typename Callback>
-	void operator()(Callback &&callback, const std::shared_ptr<commit_storage_type> &previous,
-			const std::shared_ptr<util::storage_type<Input>> & storage) const {
-		const revisions_type revisions{ storage->revision };
-		if (storage->value.empty()) {
-			callback(std::make_shared<commit_storage_type>(collector_view_type(collector_type(0)),
-				util::default_revision, revisions));
-		}
-		else {
-			auto collector(std::make_shared<collector_type>(storage->value.size()));
-			std::size_t counter(0);
-			for (const auto &value : storage->value) {
-				std::size_t index(counter++);
-				executor([this, storage, collector, index, &value, callback, revisions, previous]() {
-					typename commit_storage_type::cache_type::iterator it;
-					if (previous && (it = previous->cache.find(value)) != previous->cache.end()
-						? collector->construct(index, it->second)
-						: collector->construct(index, function(value))) {
-						auto commit(std::make_shared<commit_storage_type>(
-							collector_view_type(std::move(*collector)),
-							util::default_revision, revisions));
-						for (std::size_t i = 0; i < storage->value.size(); ++i) {
-							commit->cache.emplace(storage->value[i], std::ref(commit->value[i]));
-						}
-						callback(commit);
-					}
-				});
-			}
-		}
-	}
-
-	F function;
-	Executor executor;
+	map_cache_commit_storage_type(Container &&value, util::revision_type revision,
+		const revisions_type &revisions) : util::commit_storage_type<Container, 1>(
+			std::forward<Container>(value), revision, revisions) {}
 };
 
-}  // namespace implementation
+} // namespace details
 
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
 auto map_cache(Function &&function, Dependency dependency) {
-	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
+	typedef typename util::unwrap_t<Dependency>::value_type argument_container_type;
+	typedef typename argument_container_type::value_type argument_type;
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
 	static_assert(std::is_copy_constructible<argument_type>::value,
 		"Dependency type must be copy constructible");
-	static_assert(std::is_copy_constructible<value_type>::value,
-		"T must be copy constructible");
+	static_assert(std::is_move_constructible<value_type>::value,
+		"T must be move constructible");
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
 
-	typedef implementation::map_cache_generator_type<value_type,
-		internal::get_function_t<Function>, internal::get_executor_t<Function>,
-		typename util::unwrap_t<Dependency>::value_type, Comparator, Hash> generator_type;
-	typedef typename generator_type::collector_view_type collector_view_type;
-	return impl::make_repository<collector_view_type, typename generator_type::commit_storage_type,
-		std::equal_to<collector_view_type>>(generator_type(
-			std::move(internal::get_function(function)),
-			std::move(internal::get_executor(function))), std::forward<Dependency>(dependency));
+	typedef vector_view_type<value_type, Comparator> collector_view_type;
+	typedef details::map_cache_commit_storage_type<argument_type, value_type, collector_view_type,
+		Hash> commit_storage_type;
+	return impl::make_repository<collector_view_type, commit_storage_type,
+		std::equal_to<collector_view_type>>([
+			function = std::move(internal::get_function(function)),
+			executor = std::move(internal::get_executor(function))](
+				auto &&callback, const auto &previous, const auto &storage) {
+			typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
+			typedef vector_view_type<value_type, Comparator> collector_view_type;
+			typedef std::array<util::revision_type, 1> revisions_type;
+
+			if (storage->value.empty()) {
+				callback(std::make_shared<commit_storage_type>(
+					collector_view_type(collector_type(0)),
+					util::default_revision, revisions_type{ storage->revision }));
+			}
+			else {
+				auto collector(std::make_shared<collector_type>(storage->value.size()));
+				std::size_t counter(0);
+				for (const auto &value : storage->value) {
+					std::size_t index(counter++);
+					executor([function, storage, collector, index, &value, callback, previous]() {
+						typename commit_storage_type::cache_type::iterator it;
+						if (previous && (it = previous->cache.find(value)) != previous->cache.end()
+							? collector->construct(index, it->second)
+							: collector->construct(index, function(value))) {
+							auto commit(std::make_shared<commit_storage_type>(
+								collector_view_type(std::move(*collector)),
+								util::default_revision, revisions_type{ storage->revision }));
+							auto storage_it(std::begin(storage->value));
+							auto commit_it(std::begin(commit->value));
+							for (;
+									storage_it != std::end(storage->value)
+									&& commit_it != std::end(commit->value);
+									++storage_it, ++commit_it) {
+								commit->cache.emplace(*storage_it, std::ref(*commit_it));
+							}
+							callback(commit);
+						}
+					});
+				}
+			}
+		}, std::forward<Dependency>(dependency));
 }
 
 template<typename Hash, typename Function, typename Dependency>
