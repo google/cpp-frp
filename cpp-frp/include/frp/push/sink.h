@@ -16,12 +16,12 @@ struct sink_repository_type {
 	typedef T value_type;
 
 	template<typename Dependency>
-	struct template_storage_type : util::storage_supplier_type<T> {
+	struct template_storage_type {
 
 		explicit template_storage_type(Dependency &&dependency)
 			: dependency(std::forward<Dependency>(dependency)) {}
 
-		std::shared_ptr<util::storage_type<T>> get() const final override {
+		std::shared_ptr<util::storage_type<T>> get() const {
 			return std::atomic_load(&value);
 		}
 
@@ -63,7 +63,7 @@ struct sink_repository_type {
 	}
 
 	auto get() const {
-		return storage->get();
+		return provider();
 	}
 
 	template<typename Dependency>
@@ -74,12 +74,12 @@ struct sink_repository_type {
 
 	template<typename Storage>
 	explicit sink_repository_type(const std::shared_ptr<Storage> &storage)
-		: storage(storage)
+		: provider([=]() { return storage->get(); })
 		, callback(util::add_callback(util::unwrap_reference(storage->dependency),
-			[storage, weak_storage = std::weak_ptr<Storage>(storage)]() {
-				auto storage(weak_storage.lock());
-				if (storage) {
-					storage->evaluate();
+			[weak_storage = std::weak_ptr<Storage>(storage)]() {
+				auto s(weak_storage.lock());
+				if (s) {
+					s->evaluate();
 				}
 			})) {
 		storage->evaluate();
@@ -91,7 +91,7 @@ struct sink_repository_type {
 	sink_repository_type &operator=(const sink_repository_type &) = delete;
 	sink_repository_type &operator=(sink_repository_type &&) = default;
 
-	std::shared_ptr<util::storage_supplier_type<T>> storage;
+	std::function<std::shared_ptr<util::storage_type<T>>()> provider;
 	util::observable_type::reference_type callback;
 };
 

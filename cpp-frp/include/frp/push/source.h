@@ -35,8 +35,9 @@ struct source_repository_type {
 	explicit source_repository_type(std::unique_ptr<StorageT> &&storage)
 		: storage(std::forward<std::unique_ptr<StorageT>>(storage)) {}
 
-	struct storage_type : util::storage_supplier_type<T> {
+	struct storage_type : util::observable_type {
 		virtual void accept(std::shared_ptr<util::storage_type<T>> &&) = 0;
+		virtual std::shared_ptr<util::storage_type<T>> get() const = 0;
 	};
 
 	template<typename Comparator>

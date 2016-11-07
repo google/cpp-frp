@@ -57,11 +57,6 @@ struct storage_type<void> {
 	}
 };
 
-template<typename T>
-struct storage_supplier_type : observable_type {
-	virtual std::shared_ptr<storage_type<T>> get() const = 0;
-};
-
 template<typename T, std::size_t DependenciesN>
 struct commit_storage_type : storage_type<T> {
 	constexpr static std::size_t dependents_size = DependenciesN;
