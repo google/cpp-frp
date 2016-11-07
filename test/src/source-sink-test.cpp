@@ -30,15 +30,8 @@ TEST(source, undefined_access) {
 	ASSERT_THROW(**sink, std::domain_error);
 }
 
-// TODO(gardell): Remove
-struct odd_comparator {
-	auto operator()(int lhs, int rhs) const {
-		return lhs % 2 == rhs % 2;
-	}
-};
-
 TEST(source, custom_comparator) {
-	auto source(frp::push::source<odd_comparator>(2));
+	auto source(frp::push::source<odd_comparator_type>(2));
 	auto sink(frp::push::sink(std::ref(source)));
 	ASSERT_EQ(**sink, 2);
 	source = 4;

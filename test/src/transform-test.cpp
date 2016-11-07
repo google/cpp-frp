@@ -48,7 +48,7 @@ TEST(repo, void_repository) {
 }
 
 TEST(repo, shared_ptr) {
-	auto source(std::make_shared<frp::push::source_repository_type<int>>(frp::push::source(5)));
+	auto source(std::make_shared<frp::push::source_type<int>>(frp::push::source(5)));
 
 	auto merge(frp::push::transform([](auto i, auto j) {},
 		frp::push::transform([](auto i) { return i; }, source),
@@ -56,7 +56,7 @@ TEST(repo, shared_ptr) {
 }
 
 TEST(repo, unique_ptr) {
-	auto sink(std::make_unique<frp::push::source_repository_type<int>>(frp::push::source(5)));
+	auto sink(std::make_unique<frp::push::source_type<int>>(frp::push::source(5)));
 }
 
 TEST(repo, mutable_repository) {

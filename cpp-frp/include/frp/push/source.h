@@ -1,6 +1,7 @@
 #ifndef _FRP_PUSH_SOURCE_H_
 #define _FRP_PUSH_SOURCE_H_
 
+#include <frp/push/internal/operator.h>
 #include <frp/util/observable.h>
 #include <frp/util/storage.h>
 #include <memory>
@@ -10,29 +11,41 @@ namespace frp {
 namespace push {
 
 template<typename T>
-struct source_repository_type {
+struct source_type {
+
+	template<typename Comparator_, typename U>
+	friend auto source();
+	template<typename Comparator_, typename U>
+	friend auto source(U &&value);
+	template<typename Comparator_, typename U>
+	friend auto source(const U &value);
+	template<typename O_, typename F_>
+	friend auto util::add_callback(O_ &observable, F_ &&f);
+	template<typename T>
+	friend auto details::get_storage(T &value);
 
 	typedef T value_type;
 
+private:
 	template<typename Comparator>
 	static auto make(T &&value) {
-		return source_repository_type<T>(std::make_unique<template_storage_type<Comparator>>(
+		return source_type<T>(std::make_unique<template_storage_type<Comparator>>(
 			std::forward<T>(value)));
 	}
 
 	template<typename Comparator>
 	static auto make(const T &value) {
-		return source_repository_type<T>(std::make_unique<template_storage_type<Comparator>>(
+		return source_type<T>(std::make_unique<template_storage_type<Comparator>>(
 			value));
 	}
 
 	template<typename Comparator>
 	static auto make() {
-		return source_repository_type<T>(std::make_unique<template_storage_type<Comparator>>());
+		return source_type<T>(std::make_unique<template_storage_type<Comparator>>());
 	}
 
 	template<typename StorageT>
-	explicit source_repository_type(std::unique_ptr<StorageT> &&storage)
+	explicit source_type(std::unique_ptr<StorageT> &&storage)
 		: storage(std::forward<std::unique_ptr<StorageT>>(storage)) {}
 
 	struct storage_type : util::observable_type {
@@ -65,8 +78,24 @@ struct source_repository_type {
 		Comparator comparator;
 	};
 
+	auto get_storage() const {
+		return storage->get();
+	}
+
+	template<typename F>
+	auto add_callback(F &&f) const {
+		return storage->add_callback(std::forward<F>(f));
+	}
+
+	std::unique_ptr<storage_type> storage;
+
+public:
 	struct reference {
-		std::shared_ptr<util::storage_type<T>> value;
+
+		template<typename U>
+		friend struct source_type;
+
+		typedef T value_type;
 
 		operator bool() const {
 			return !!value;
@@ -88,6 +117,11 @@ struct source_repository_type {
 		operator const T &() const {
 			return operator*();
 		}
+
+	private:
+		explicit reference(std::shared_ptr<util::storage_type<T>> &&value)
+			: value(std::forward<std::shared_ptr<util::storage_type<T>>>(value)) {}
+		std::shared_ptr<util::storage_type<T>> value;
 	};
 
 	auto &operator=(T &&value) const {
@@ -101,19 +135,8 @@ struct source_repository_type {
 	}
 
 	reference operator*() const {
-		return reference{ get() };
+		return reference(get_storage());
 	}
-
-	auto get() const {
-		return storage->get();
-	}
-
-	template<typename F>
-	auto add_callback(F &&f) const {
-		return storage->add_callback(std::forward<F>(f));
-	}
-
-	std::unique_ptr<storage_type> storage;
 };
 
 namespace details {
@@ -141,19 +164,19 @@ struct source_type_equality_requirements_type : source_type_requirements_type<T>
 template<typename Comparator, typename T>
 auto source() {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_repository_type<value_type>::make<Comparator>();
+	return source_type<value_type>::make<Comparator>();
 }
 
 template<typename Comparator, typename T>
 auto source(T &&value) {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_repository_type<value_type>::make<Comparator>(std::forward<T>(value));
+	return source_type<value_type>::make<Comparator>(std::forward<T>(value));
 }
 
 template<typename Comparator, typename T>
 auto source(const T &value) {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_repository_type<value_type>::make<Comparator>(value);
+	return source_type<value_type>::make<Comparator>(value);
 }
 
 template<typename T>

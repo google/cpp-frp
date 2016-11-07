@@ -11,30 +11,20 @@ namespace frp {
 namespace push {
 
 template<typename T>
-struct sink_repository_type {
+struct sink_type {
+
+	template<typename Dependency_>
+	friend auto sink(Dependency_ &&dependency);
 
 	typedef T value_type;
 
-	template<typename Dependency>
-	struct template_storage_type {
-
-		explicit template_storage_type(Dependency &&dependency)
-			: dependency(std::forward<Dependency>(dependency)) {}
-
-		std::shared_ptr<util::storage_type<T>> get() const {
-			return std::atomic_load(&value);
-		}
-
-		void evaluate() {
-			std::atomic_store(&value, util::unwrap_reference(dependency).get());
-		}
-
-		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
-		Dependency dependency;
-	};
+	sink_type() = default;
 
 	struct reference {
-		std::shared_ptr<util::storage_type<T>> value;
+		template<typename U>
+		friend struct sink_type;
+
+		typedef T value_type;
 
 		operator bool() const {
 			return !!value;
@@ -56,24 +46,44 @@ struct sink_repository_type {
 		operator const T &() const {
 			return operator*();
 		}
+
+	private:
+		explicit reference(std::shared_ptr<util::storage_type<T>> &&value)
+			: value(std::forward<std::shared_ptr<util::storage_type<T>>>(value)) {}
+		std::shared_ptr<util::storage_type<T>> value;
 	};
 
 	reference operator*() const {
-		return reference{ get() };
+		return reference(provider());
 	}
 
-	auto get() const {
-		return provider();
-	}
+private:
+	template<typename Dependency>
+	struct template_storage_type {
+
+		explicit template_storage_type(Dependency &&dependency)
+			: dependency(std::forward<Dependency>(dependency)) {}
+
+		std::shared_ptr<util::storage_type<T>> get() const {
+			return std::atomic_load(&value);
+		}
+
+		void evaluate() {
+			std::atomic_store(&value, details::get_storage(util::unwrap_reference(dependency)));
+		}
+
+		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
+		Dependency dependency;
+	};
 
 	template<typename Dependency>
 	static auto make(Dependency &&dependency) {
-		return sink_repository_type(std::make_shared<template_storage_type<Dependency>>(
+		return sink_type(std::make_shared<template_storage_type<Dependency>>(
 			std::forward<Dependency>(dependency)));
 	}
 
 	template<typename Storage>
-	explicit sink_repository_type(const std::shared_ptr<Storage> &storage)
+	explicit sink_type(const std::shared_ptr<Storage> &storage)
 		: provider([=]() { return storage->get(); })
 		, callback(util::add_callback(util::unwrap_reference(storage->dependency),
 			[weak_storage = std::weak_ptr<Storage>(storage)]() {
@@ -85,12 +95,6 @@ struct sink_repository_type {
 		storage->evaluate();
 	}
 
-	sink_repository_type() = default;
-	sink_repository_type(const sink_repository_type &) = delete;
-	sink_repository_type(sink_repository_type &&) = default;
-	sink_repository_type &operator=(const sink_repository_type &) = delete;
-	sink_repository_type &operator=(sink_repository_type &&) = default;
-
 	std::function<std::shared_ptr<util::storage_type<T>>()> provider;
 	util::observable_type::reference_type callback;
 };
@@ -100,7 +104,7 @@ auto sink(Dependency &&dependency) {
 	typedef typename util::unwrap_t<Dependency>::value_type value_type;
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
 	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible.");
-	return sink_repository_type<value_type>::make(std::forward<Dependency>(dependency));
+	return sink_type<value_type>::make(std::forward<Dependency>(dependency));
 }
 
 } // namespace push

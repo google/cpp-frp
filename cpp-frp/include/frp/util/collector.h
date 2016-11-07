@@ -9,8 +9,6 @@ namespace frp {
 
 template<typename T, typename Allocator, typename Comparator>
 struct vector_view_type;
-template<typename T, typename Container, typename Allocator>
-struct array_deleter_type;
 
 namespace util {
 

@@ -6,8 +6,6 @@
 #include <mutex>
 #include <queue>
 
-// TODO(gardell): Cleanup and simplify, we don't need std::future support! Make lock-free!
-
 namespace frp {
 namespace util {
 

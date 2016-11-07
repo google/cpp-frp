@@ -21,6 +21,7 @@
   <ItemGroup>
     <ClInclude Include="include\frp\execute_on.h" />
     <ClInclude Include="include\frp\push\filter.h" />
+    <ClInclude Include="include\frp\push\internal\operator.h" />
     <ClInclude Include="include\frp\push\map.h" />
     <ClInclude Include="include\frp\push\map_cache.h" />
     <ClInclude Include="include\frp\push\sink.h" />

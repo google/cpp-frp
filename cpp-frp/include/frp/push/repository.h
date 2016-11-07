@@ -2,6 +2,7 @@
 #define _FRP_PUSH_REPOSITORY_H_
 
 #include <frp/execute_on.h>
+#include <frp/push/internal/operator.h>
 #include <frp/util/function.h>
 #include <frp/util/observable.h>
 #include <frp/util/observe_all.h>
@@ -54,7 +55,7 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> weak_
 	if (storage) {
 		util::invoke([&](Dependencies&... dependencies) {
 			generate_attempt_commit(storage, observable, generator, comparator,
-				util::unwrap_reference(dependencies).get()...);
+				details::get_storage(util::unwrap_reference(dependencies))...);
 		}, std::ref(*dependencies));
 	}
 }
@@ -80,11 +81,19 @@ auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
 template<typename T>
 struct repository_type {
 
+	template<typename U, typename Storage, typename Comparator, typename Generator,
+		typename... Dependencies>
+	friend auto details::make_repository(Generator &&generator, Dependencies &&... dependencies);
+	template<typename O_, typename F_>
+	friend auto util::add_callback(O_ &observable, F_ &&f);
+	template<typename T>
+	friend auto details::get_storage(T &value);
+
 	typedef T value_type;
 
 	repository_type() = default;
 
-	// TODO(gardell): Make private, all usage must be through make
+private:
 	template<typename Update, typename Provider, typename... Dependencies>
 	explicit repository_type(const std::shared_ptr<util::observable_type> &observable, Update update,
 		Provider &&provider, const std::shared_ptr<std::tuple<Dependencies...>> &dependencies)
@@ -93,7 +102,7 @@ struct repository_type {
 			util::observe_all(std::forward<Update>(update)), dependencies)))
 		, provider(std::forward<Provider>(provider)) {}
 
-	auto get() const {
+	auto get_storage() const {
 		return provider();
 	}
 

@@ -9,8 +9,6 @@
 #include <queue>
 #include <thread>
 
-// TODO(gardell): Cleanup and simplify, we don't need std::future support! Make lock-free!
-
 namespace frp {
 namespace util {
 

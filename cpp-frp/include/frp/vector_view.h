@@ -6,6 +6,7 @@
 #include <frp/util/collector.h>
 
 namespace frp {
+namespace internal {
 
 template<typename T, typename Comparator, typename Allocator, bool CopyConstructible>
 struct vector_view_type_impl;
@@ -121,11 +122,15 @@ struct vector_view_type_impl<T, Comparator, Allocator, true> {
 	size_type capacity;
 };
 
+} // namespace internal
+
 template<typename T, typename Comparator = std::equal_to<T>,
 	typename Allocator = std::allocator<T>>
-struct vector_view_type : vector_view_type_impl<T, Comparator, Allocator, std::is_copy_constructible<T>::value> {
+struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocator,
+		std::is_copy_constructible<T>::value> {
 
-	typedef vector_view_type_impl<T, Comparator, Allocator, std::is_copy_constructible<T>::value> parent_type;
+	typedef internal::vector_view_type_impl<T, Comparator, Allocator,
+		std::is_copy_constructible<T>::value> parent_type;
 
 	typedef T value_type;
 	typedef Allocator allocator_type;

@@ -7,15 +7,18 @@
 
 namespace frp {
 namespace util {
+namespace details {
 
 template<typename F, typename Tuple, std::size_t... I>
-auto invoke_impl(F &&f, Tuple tuple, std::index_sequence<I...>) {
+auto invoke(F &&f, Tuple tuple, std::index_sequence<I...>) {
 	return f(std::move(std::get<I>(unwrap_reference(std::forward<Tuple>(tuple))))...);
 }
 
+} // namespace details
+
 template<typename F, typename Tuple>
 auto invoke(F &&f, Tuple tuple) {
-	return invoke_impl(std::forward<F>(f), std::forward<Tuple>(tuple),
+	return details::invoke(std::forward<F>(f), std::forward<Tuple>(tuple),
 		std::make_index_sequence<std::tuple_size<unwrap_t<Tuple>>::value>{});
 }
 
