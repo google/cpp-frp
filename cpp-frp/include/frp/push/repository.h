@@ -47,15 +47,15 @@ void generate_attempt_commit(const std::shared_ptr<std::shared_ptr<Storage>> &st
 }
 
 template<typename Storage, typename Generator, typename Comparator, typename... Dependencies>
-void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> weak_storage,
-		Generator &generator, Comparator &comparator,
+void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak_storage,
+		const std::shared_ptr<Generator> &generator, Comparator &comparator,
 		const std::shared_ptr<util::observable_type> &observable,
 		const std::shared_ptr<std::tuple<Dependencies...>> &dependencies) {
 	auto storage(weak_storage.lock());
 	if (storage) {
-		util::invoke([&](Dependencies&... dependencies) {
-			generate_attempt_commit(storage, observable, generator, comparator,
-				details::get_storage(util::unwrap_reference(dependencies))...);
+		util::invoke([&](const Dependencies&... dependencies) {
+			generate_attempt_commit(storage, observable, *generator, comparator,
+				details::get_storage(util::unwrap_container(dependencies))...);
 		}, std::ref(*dependencies));
 	}
 }
@@ -63,13 +63,17 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> weak_
 template<typename T, typename Storage, typename Comparator, typename Generator,
 	typename... Dependencies>
 auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
+	// TODO(gardell): Group storage together, there's an awful lot of shared_ptr instances!
+	// Note that storage should be kept separate, since its highly volatile.
 	auto storage(std::make_shared<std::shared_ptr<Storage>>());
 	auto observable(std::make_shared<util::observable_type>());
 	auto shared_dependencies(std::make_shared<std::tuple<Dependencies...>>(
 		std::forward<Dependencies>(dependencies)...));
-	auto callback(std::bind(&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
-		std::weak_ptr<std::shared_ptr<Storage>>(storage), std::forward<Generator>(generator),
-		Comparator(), observable, shared_dependencies));
+	auto callback(std::bind(
+		&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
+		std::weak_ptr<std::shared_ptr<Storage>>(storage),
+		std::make_shared<Generator>(std::forward<Generator>(generator)), Comparator(), observable,
+		shared_dependencies));
 	auto provider([=]() { return std::atomic_load(&*storage); });
 	repository_type<T> repository(observable, callback, provider, shared_dependencies);
 	callback();
@@ -95,11 +99,11 @@ struct repository_type {
 
 private:
 	template<typename Update, typename Provider, typename... Dependencies>
-	explicit repository_type(const std::shared_ptr<util::observable_type> &observable, Update update,
+	repository_type(const std::shared_ptr<util::observable_type> &observable, const Update &update,
 		Provider &&provider, const std::shared_ptr<std::tuple<Dependencies...>> &dependencies)
 		: observable(observable)
 		, callbacks(util::vector_from_array(util::invoke(
-			util::observe_all(std::forward<Update>(update)), dependencies)))
+			util::observe_all(update), std::ref(*dependencies))))
 		, provider(std::forward<Provider>(provider)) {}
 
 	auto get_storage() const {

@@ -1,16 +1,13 @@
 #ifndef _THREAD_POOL_H_
 #define _THREAD_POOL_H_
 
-#include <frp/util/task_queue.h>
+#include <task_queue.h>
 #include <condition_variable>
 #include <functional>
 #include <future>
 #include <mutex>
 #include <queue>
 #include <thread>
-
-namespace frp {
-namespace util {
 
 struct thread_pool {
 private:
@@ -85,8 +82,5 @@ public:
 private:
 	std::unique_ptr<instance_type> instance;
 };
-
-} // namespace util
-} // namespace frp
 
 #endif // _THREAD_POOL_H_

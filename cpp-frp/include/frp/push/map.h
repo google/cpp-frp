@@ -11,7 +11,7 @@ namespace push {
 
 template<typename Comparator, typename Function, typename Dependency>
 auto map(Function &&function, Dependency dependency) {
-	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
+	typedef typename util::unwrap_reference_t<Dependency>::value_type::value_type argument_type;
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
 	static_assert(std::is_move_constructible<value_type>::value,

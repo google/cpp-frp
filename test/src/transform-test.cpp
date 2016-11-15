@@ -3,6 +3,7 @@
 #include <frp/push/transform.h>
 #include <future>
 #include <gtest/gtest.h>
+#include <thread_pool.h>
 
 TEST(repo, test_one_parent) {
 	auto squared(frp::push::transform([](int i) { return i * i; },
@@ -148,3 +149,32 @@ TEST(transform, assignment) {
 	frp::push::repository_type<int> repository;
 	repository = frp::push::transform([]() { return 0; });
 }
+
+TEST(transform, thread_pool1) {
+	thread_pool pool(4);
+
+	frp::push::transform(frp::execute_on(std::ref(pool), []() { return rand(); }));
+	frp::push::transform(frp::execute_on(std::ref(pool), []() { return rand(); }));
+}
+
+TEST(transform, thread_pool2) {
+	thread_pool pool(4);
+
+	std::atomic_int counter(0);
+	auto source(frp::push::source(0));
+	frp::push::transform(frp::execute_on(thread_pool(1),
+		[&](auto source) {
+			auto previous(counter.exchange(source));
+			assert(previous < source);
+		}),
+		frp::push::transform(
+			frp::execute_on(std::ref(pool), [](auto source) {
+				return source + 1;
+				std::this_thread::yield();
+			}),
+			std::ref(source)));
+	for (int i = 0; i < 10000; ++i) {
+		source = i;
+	}
+}
+

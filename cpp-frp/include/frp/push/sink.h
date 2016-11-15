@@ -69,7 +69,7 @@ private:
 		}
 
 		void evaluate() {
-			std::atomic_store(&value, details::get_storage(util::unwrap_reference(dependency)));
+			std::atomic_store(&value, details::get_storage(util::unwrap_container(dependency)));
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
@@ -101,7 +101,7 @@ private:
 
 template<typename Dependency>
 auto sink(Dependency &&dependency) {
-	typedef typename util::unwrap_t<Dependency>::value_type value_type;
+	typedef typename util::unwrap_reference_t<Dependency>::value_type value_type;
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
 	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible.");
 	return sink_type<value_type>::make(std::forward<Dependency>(dependency));

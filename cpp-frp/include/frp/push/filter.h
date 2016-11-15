@@ -51,13 +51,13 @@ struct filter_generator_type {
 }  // namespace implementation
 
 template<typename Comparator, typename Function, typename Dependency>
-auto filter(Function function, Dependency dependency) {
-	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
+auto filter(Function &&function, Dependency &&dependency) {
+	typedef typename util::unwrap_reference_t<Dependency>::value_type::value_type value_type;
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
 	static_assert(std::is_copy_constructible<value_type>::value, "T must be copy constructible.");
 	typedef implementation::filter_generator_type<value_type,
 		internal::get_function_t<Function>, internal::get_executor_t<Function>,
-		typename util::unwrap_t<Dependency>::value_type, Comparator> generator_type;
+		typename util::unwrap_reference_t<Dependency>::value_type, Comparator> generator_type;
 	typedef typename generator_type::collector_view_type collector_view_type;
 	return details::make_repository<collector_view_type, typename generator_type::commit_storage_type,
 		std::equal_to<collector_view_type>>(generator_type(
@@ -67,8 +67,8 @@ auto filter(Function function, Dependency dependency) {
 }
 
 template<typename Function, typename Dependency>
-auto filter(Function function, Dependency dependency) {
-	typedef util::unwrap_t<Dependency>::value_type::value_type value_type;
+auto filter(Function &&function, Dependency &&dependency) {
+	typedef typename util::unwrap_reference_t<Dependency>::value_type::value_type value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");
 	return filter<std::equal_to<value_type>>(std::forward<Function>(function),

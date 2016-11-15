@@ -8,54 +8,96 @@ namespace frp {
 namespace util {
 
 template<typename T>
-struct unwrap_type {
-	typedef T type;
-};
-
-template<typename T>
-struct unwrap_type<std::reference_wrapper<T>> : unwrap_type<T> {};
-
-template<typename T>
-struct unwrap_type<std::shared_ptr<T>> : unwrap_type<T> {};
-
-template<typename T>
-struct unwrap_type<std::unique_ptr<T>> : unwrap_type<T> {};
-
-template<typename T>
-using unwrap_t = typename unwrap_type<T>::type;
-
-template<typename T>
 struct unwrap_reference_type {
-	static T &get(T &value) {
+	typedef T value_type;
+
+	static auto &get(T &value) {
 		return value;
+	}
+
+	static auto get(T &&value) {
+		return std::forward<T>(value);
 	}
 };
 
 template<typename T>
 struct unwrap_reference_type<std::reference_wrapper<T>> {
+	typedef T value_type;
+
 	static T &get(const std::reference_wrapper<T> &value) {
 		return value;
 	}
 };
 
 template<typename T>
-struct unwrap_reference_type<std::shared_ptr<T>> {
+using unwrap_reference_t = typename unwrap_reference_type<std::decay_t<T>>::value_type;
+
+template<typename T>
+decltype(auto) unwrap_reference(T &value) {
+	return unwrap_reference_type<T>::get(value);
+}
+
+template<typename T>
+decltype(auto) unwrap_reference(T &&value) {
+	return unwrap_reference_type<T>::get(std::forward<T>(value));
+}
+
+template<typename T>
+struct unwrap_container_type {
+	typedef T value_type;
+
+	static T &get(T &value) {
+		return value;
+	}
+
+	static const T &get(const T &value) {
+		return value;
+	}
+
+	static T get(T &&value) {
+		return std::forward<T>(value);
+	}
+};
+
+template<typename T>
+struct unwrap_container_type<std::reference_wrapper<T>> {
+	typedef T value_type;
+
+	static T &get(const std::reference_wrapper<T> &value) {
+		return value;
+	}
+};
+
+template<typename T>
+struct unwrap_container_type<std::shared_ptr<T>> {
+	typedef T value_type;
+
 	static T &get(const std::shared_ptr<T> &value) {
 		return *value;
 	}
 };
 
 template<typename T>
-struct unwrap_reference_type<std::unique_ptr<T>> {
+struct unwrap_container_type<std::unique_ptr<T>> {
+	typedef T value_type;
+
 	static T &get(const std::unique_ptr<T> &value) {
 		return *value;
 	}
 };
 
 template<typename T>
-auto &unwrap_reference(T &value) {
-	return unwrap_reference_type<T>::get(value);
+decltype(auto) unwrap_container(T &value) {
+	return unwrap_container_type<std::decay_t<T>>::get(value);
 }
+
+template<typename T>
+decltype(auto) unwrap_container(T &&value) {
+	return unwrap_container_type<std::decay_t<T>>::get(std::forward<T>(value));
+}
+
+template<typename T>
+using unwrap_container_t = typename unwrap_container_type<std::decay_t<T>>::value_type;
 
 } // namespace util
 } // namespace frp

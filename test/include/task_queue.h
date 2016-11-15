@@ -6,9 +6,6 @@
 #include <mutex>
 #include <queue>
 
-namespace frp {
-namespace util {
-
 struct task_queue {
 private:
 	typedef std::function<void()> task_type;
@@ -80,8 +77,5 @@ private:
 	tasks_type tasks;
 	mutable std::mutex tasks_mutex;
 };
-
-} // namespace util
-} // namespace frp
 
 #endif // _TASK_QUEUE_H_

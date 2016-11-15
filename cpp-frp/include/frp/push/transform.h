@@ -8,21 +8,20 @@ namespace push {
 
 template<typename Comparator, typename Function, typename... Dependencies>
 auto transform(Function &&function, Dependencies... dependencies) {
-
 	static_assert(util::all_true_type<typename util::is_not_void<
-		typename util::unwrap_t<Dependencies>::value_type>::type...>::value,
-			"Dependencies can not be void type.");
+		typename util::unwrap_container_t<Dependencies>::value_type>::type...>::value,
+		"Dependencies can not be void type.");
 
 	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	typedef util::commit_storage_type<value_type, sizeof...(Dependencies)> commit_storage_type;
 
 	return details::make_repository<value_type, commit_storage_type, Comparator>(
-		[function = std::forward<Function>(function)](
+		[function = internal::get_function(util::unwrap_reference(std::forward<Function>(function))),
+		 executor = internal::get_executor(util::unwrap_reference(std::forward<Function>(function)))](
 			auto &&callback, const auto &, const auto &... storage) {
-		internal::get_executor(function)([=, callback = std::move(callback)]() {
-			callback(commit_storage_type::make(
-				std::bind(internal::get_function(function), std::cref(storage->value)...),
-				{ storage->revision... }));
+		executor([=, callback = std::move(callback)]() {
+			callback(commit_storage_type::make(std::bind(std::ref(function),
+				std::cref(storage->value)...), { storage->revision... }));
 		});
 	}, std::forward<Dependencies>(dependencies)...);
 }

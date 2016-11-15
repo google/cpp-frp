@@ -26,7 +26,7 @@ struct map_cache_commit_storage_type : util::commit_storage_type<Container, 1> {
 
 template<typename Comparator, typename Hash, typename Function, typename Dependency>
 auto map_cache(Function &&function, Dependency dependency) {
-	typedef typename util::unwrap_t<Dependency>::value_type argument_container_type;
+	typedef typename util::unwrap_reference_t<Dependency>::value_type argument_container_type;
 	typedef typename argument_container_type::value_type argument_type;
 	typedef util::map_return_type<Function, Dependency> value_type;
 	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
@@ -93,7 +93,7 @@ auto map_cache(Function &&function, Dependency dependency) {
 
 template<typename Function, typename Dependency>
 auto map_cache(Function &&function, Dependency dependency) {
-	typedef typename util::unwrap_t<Dependency>::value_type::value_type argument_type;
+	typedef typename util::unwrap_reference_t<Dependency>::value_type::value_type argument_type;
 	return map_cache<std::hash<argument_type>>(std::forward<Function>(function),
 		std::forward<Dependency>(dependency));
 }

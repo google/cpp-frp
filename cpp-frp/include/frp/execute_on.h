@@ -25,7 +25,7 @@ struct from_function_type {
 	typedef execute_immediate_type executor_type;
 	typedef F function_type;
 
-	static auto executor(F &f) {
+	static auto executor(F &&f) {
 		return execute_immediate_type();
 	}
 
