@@ -68,3 +68,11 @@ TEST(map_cache, custom_comparator) {
 	ASSERT_EQ(value3[1], 2);
 	ASSERT_EQ(value3[2], 3);
 }
+
+TEST(map_cache, references) {
+	auto f([](auto source) {
+		return source * source;
+	});
+	auto source(frp::push::transform([]() { return make_array(1, 3, 5, 7); }));
+	auto map(frp::push::map_cache(std::cref(f), std::cref(source)));
+}

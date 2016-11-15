@@ -23,11 +23,11 @@ auto invoke(F &&f, Tuple &&tuple) {
 }
 
 template<typename F, typename... Ds>
-using transform_return_type = decltype(std::declval<internal::get_function_t<F>>()(
+using transform_return_type = decltype(std::declval<const internal::get_function_t<F>>()(
 	std::declval<const typename util::unwrap_container_t<Ds>::value_type &>()...));
 
 template<typename F, typename... Ds>
-using map_return_type = decltype(std::declval<internal::get_function_t<F>>()(
+using map_return_type = decltype(std::declval<const internal::get_function_t<F>>()(
 	std::declval<const typename util::unwrap_container_t<Ds>::value_type::value_type &>()...));
 
 } // namespace util

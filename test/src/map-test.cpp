@@ -51,3 +51,11 @@ TEST(map, movable_only) {
 		std::ref(source));
 	source = { 6, 7, 8 };
 }
+
+TEST(map, references) {
+	auto f([](auto source) {
+		return source * source;
+	});
+	auto source(frp::push::transform([]() { return make_array(1, 3, 5, 7); }));
+	auto map(frp::push::map(std::cref(f), std::cref(source)));
+}

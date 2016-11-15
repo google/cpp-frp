@@ -178,3 +178,10 @@ TEST(transform, thread_pool2) {
 	}
 }
 
+TEST(transform, references) {
+	auto f([](auto source) {
+		return source * source;
+	});
+	auto source(frp::push::transform([]() { return -2; }));
+	frp::push::transform(std::cref(f), std::cref(source));
+}
