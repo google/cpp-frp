@@ -1,6 +1,8 @@
 #ifndef _FRP_UTIL_VARIADIC_H_
 #define _FRP_UTIL_VARIADIC_H_
 
+#include <type_traits>
+
 namespace frp {
 namespace util {
 
@@ -20,7 +22,7 @@ template<typename... T>
 struct all_true_type<std::true_type, T...> : all_true_type<T...> {};
 
 template<typename T>
-struct is_not_void : std::bool_constant<!std::is_void<T>::value> {};
+struct is_not_void : std::integral_constant<bool, !std::is_void<T>::value> {};
 
 namespace details {
 

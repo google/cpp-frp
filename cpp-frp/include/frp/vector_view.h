@@ -233,25 +233,25 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 	explicit vector_view_type(util::fixed_size_collector_type<T, Comparator, Allocator> &&collector)
 		: parent_type(std::move(collector.storage), std::move(collector.comparator),
 			std::move(collector.allocator), collector.storage_size, collector.capacity) {
-		assert(storage_size == collector.capacity);
+		assert(parent_type::storage_size == collector.capacity);
 	}
 
 	explicit vector_view_type(util::append_collector_type<T, Comparator, Allocator> &&collector)
 		: parent_type(std::move(collector.storage), std::move(collector.comparator),
 			std::move(collector.allocator), collector.storage_size, collector.capacity) {
-		assert(capacity == collector.counter);
+		assert(parent_type::capacity == collector.counter);
 	}
 
 	reference operator[](size_type index) const {
-		return storage[index];
+		return parent_type::storage[index];
 	}
 
 	const_iterator begin() const {
-		return const_iterator(storage.get());
+		return const_iterator(parent_type::storage.get());
 	}
 
 	const_iterator end() const {
-		return const_iterator(storage.get() + size());
+		return const_iterator(parent_type::storage.get() + size());
 	}
 
 	auto rbegin() const {
@@ -263,7 +263,7 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 	}
 
 	auto size() const {
-		return storage_size;
+		return parent_type::storage_size;
 	}
 
 	bool empty() const {
@@ -272,7 +272,8 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 
 	bool operator==(const vector_view_type &collector) const {
 		return size() == collector.size()
-			&& std::equal(begin(), end(), collector.begin(), collector.end(), comparator);
+			&& std::equal(begin(), end(), collector.begin(), collector.end(),
+				parent_type::comparator);
 	}
 };
 

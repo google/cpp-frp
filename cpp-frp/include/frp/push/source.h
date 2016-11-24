@@ -21,12 +21,13 @@ struct source_type {
 	friend auto source(const U &value);
 	template<typename O_, typename F_>
 	friend auto util::add_callback(O_ &observable, F_ &&f);
-	template<typename T>
-	friend auto details::get_storage(T &value);
+	template<typename U>
+	friend auto details::get_storage(U &value);
 
 	typedef T value_type;
 
 private:
+
 	template<typename Comparator>
 	static auto make(T &&value) {
 		return source_type<T>(std::make_unique<template_storage_type<Comparator>>(
@@ -71,7 +72,7 @@ private:
 				replacement->revision = (current ? current->revision : util::default_revision) + 1;
 			} while ((!current || !current->compare_value(*replacement, comparator))
 				&& !std::atomic_compare_exchange_weak(&value, &current, replacement));
-			update();
+			util::observable_type::update();
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
@@ -164,19 +165,19 @@ struct source_type_equality_requirements_type : source_type_requirements_type<T>
 template<typename Comparator, typename T>
 auto source() {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::make<Comparator>();
+	return source_type<value_type>::template make<Comparator>();
 }
 
 template<typename Comparator, typename T>
 auto source(T &&value) {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::make<Comparator>(std::forward<T>(value));
+	return source_type<value_type>::template make<Comparator>(std::forward<T>(value));
 }
 
 template<typename Comparator, typename T>
 auto source(const T &value) {
 	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::make<Comparator>(value);
+	return source_type<value_type>::template make<Comparator>(value);
 }
 
 template<typename T>

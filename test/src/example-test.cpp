@@ -1,3 +1,4 @@
+#include <cmath>
 #include <frp/push/filter.h>
 #include <frp/push/map.h>
 #include <frp/push/sink.h>

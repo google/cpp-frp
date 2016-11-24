@@ -1,6 +1,7 @@
 #ifndef _FRP_UTIL_COLLECTOR_H_
 #define _FRP_UTIL_COLLECTOR_H_
 
+#include <algorithm>
 #include <atomic>
 #include <cassert>
 #include <frp/util/list.h>

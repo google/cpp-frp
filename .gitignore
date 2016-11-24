@@ -1,5 +1,9 @@
+googletest-build/
 googletest-download/
 googletest-src/
+
+cpp-frp/libcpp-frp.a
+test/frp-test
 
 ## Cmake
 CMakeCache.txt

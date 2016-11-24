@@ -62,23 +62,7 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak
 
 template<typename T, typename Storage, typename Comparator, typename Generator,
 	typename... Dependencies>
-auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
-	// TODO(gardell): Group storage together, there's an awful lot of shared_ptr instances!
-	// Note that storage should be kept separate, since its highly volatile.
-	auto storage(std::make_shared<std::shared_ptr<Storage>>());
-	auto observable(std::make_shared<util::observable_type>());
-	auto shared_dependencies(std::make_shared<std::tuple<Dependencies...>>(
-		std::forward<Dependencies>(dependencies)...));
-	auto callback(std::bind(
-		&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
-		std::weak_ptr<std::shared_ptr<Storage>>(storage),
-		std::make_shared<Generator>(std::forward<Generator>(generator)), Comparator(), observable,
-		shared_dependencies));
-	auto provider([=]() { return std::atomic_load(&*storage); });
-	repository_type<T> repository(observable, callback, provider, shared_dependencies);
-	callback();
-	return repository;
-}
+auto make_repository(Generator &&generator, Dependencies &&... dependencies);
 
 } // namespace details
 
@@ -90,8 +74,8 @@ struct repository_type {
 	friend auto details::make_repository(Generator &&generator, Dependencies &&... dependencies);
 	template<typename O_, typename F_>
 	friend auto util::add_callback(O_ &observable, F_ &&f);
-	template<typename T>
-	friend auto details::get_storage(T &value);
+	template<typename U>
+	friend auto details::get_storage(U &value);
 
 	typedef T value_type;
 
@@ -119,6 +103,30 @@ private:
 	std::shared_ptr<util::observable_type> observable;
 	std::vector<util::observable_type::reference_type> callbacks;
 };
+
+namespace details {
+
+template<typename T, typename Storage, typename Comparator, typename Generator,
+	typename... Dependencies>
+auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
+	// TODO(gardell): Group storage together, there's an awful lot of shared_ptr instances!
+	// Note that storage should be kept separate, since its highly volatile.
+	auto storage(std::make_shared<std::shared_ptr<Storage>>());
+	auto observable(std::make_shared<util::observable_type>());
+	auto shared_dependencies(std::make_shared<std::tuple<Dependencies...>>(
+		std::forward<Dependencies>(dependencies)...));
+	auto callback(std::bind(
+		&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
+		std::weak_ptr<std::shared_ptr<Storage>>(storage),
+		std::make_shared<Generator>(std::forward<Generator>(generator)), Comparator(), observable,
+		shared_dependencies));
+	auto provider([=]() { return std::atomic_load(&*storage); });
+	repository_type<T> repository(observable, callback, provider, shared_dependencies);
+	callback();
+	return repository;
+}
+
+} // namespace details
 
 } // namespace push
 } // namespace frp
