@@ -10,7 +10,7 @@ template<typename F>
 struct observe_all_type {
 
 	template<typename... Observables>
-	auto operator() (Observables... observables) const {
+	auto operator() (Observables&... observables) const {
 		typedef std::array<observable_type::reference_type, sizeof...(Observables)> array_type;
 		return array_type{ add_callback(util::unwrap_container(observables), function)... };
 	}

@@ -11,7 +11,7 @@ namespace details {
 
 template<typename F, typename Tuple, std::size_t... I>
 auto invoke(F &&f, Tuple &&tuple, std::index_sequence<I...>) {
-	return f(std::move(std::get<I>(unwrap_reference(std::forward<Tuple>(tuple))))...);
+	return f(std::get<I>(unwrap_reference(std::forward<Tuple>(tuple)))...);
 }
 
 } // namespace details
