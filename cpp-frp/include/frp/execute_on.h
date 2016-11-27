@@ -31,7 +31,7 @@ struct from_function_type {
 		return execute_immediate_type();
 	}
 
-	static auto function(F &&f) {
+	static decltype(auto) function(F &&f) {
 		return std::forward<F>(f);
 	}
 };
@@ -41,11 +41,11 @@ struct from_function_type<execute_on_type<F, E>> {
 	typedef E executor_type;
 	typedef F function_type;
 
-	static auto executor(execute_on_type<F, E> &&f) {
+	static decltype(auto) executor(execute_on_type<F, E> &&f) {
 		return std::move(f.executor);
 	}
 
-	static auto function(execute_on_type<F, E> &&f) {
+	static decltype(auto) function(execute_on_type<F, E> &&f) {
 		return std::move(f.function);
 	}
 };
@@ -57,12 +57,12 @@ template<typename F>
 using get_function_t = typename from_function_type<F>::function_type;
 
 template<typename F>
-auto get_executor(F &&f) {
+decltype(auto) get_executor(F &&f) {
 	return from_function_type<F>::executor(std::forward<F>(f));
 }
 
 template<typename F>
-auto get_function(F &&f) {
+decltype(auto) get_function(F &&f) {
 	return from_function_type<F>::function(std::forward<F>(f));
 }
 

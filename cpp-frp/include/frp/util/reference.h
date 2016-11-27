@@ -11,11 +11,11 @@ template<typename T>
 struct unwrap_reference_type {
 	typedef T value_type;
 
-	static auto &get(T &value) {
+	static decltype(auto) get(T &value) {
 		return value;
 	}
 
-	static auto get(T &&value) {
+	static decltype(auto) get(T &&value) {
 		return std::forward<T>(value);
 	}
 };
@@ -46,15 +46,15 @@ template<typename T>
 struct unwrap_container_type {
 	typedef T value_type;
 
-	static T &get(T &value) {
+	static decltype(auto) get(T &value) {
 		return value;
 	}
 
-	static const T &get(const T &value) {
+	static decltype(auto) get(const T &value) {
 		return value;
 	}
 
-	static T get(T &&value) {
+	static decltype(auto) get(T &&value) {
 		return std::forward<T>(value);
 	}
 };

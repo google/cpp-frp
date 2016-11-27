@@ -63,8 +63,8 @@ public:
 	explicit thread_pool(std::size_t num_threads)
 		: instance(new instance_type(num_threads)) {}
 
-	thread_pool() = default;
-	thread_pool(thread_pool &&) = default;
+	thread_pool() = delete;
+	thread_pool(thread_pool &&copy) = default;
 	thread_pool(const thread_pool &) = delete;
 	thread_pool &operator=(thread_pool &&) = default;
 	thread_pool &operator=(const thread_pool &) = default;
