@@ -1,6 +1,8 @@
 cmake_minimum_required(VERSION 3.1)
 set (CMAKE_CXX_STANDARD 14)
 
+SET(ENABLE_COVERAGE false CACHE BOOL "Enable test coverage with GCC or clang")
+
 # Download and unpack googletest at configure time
 configure_file(CMakeLists.txt.in
                googletest-download/CMakeLists.txt)
@@ -31,8 +33,8 @@ enable_testing()
 
 project (cpp-frp)
 
-if (CMAKE_COMPILER_IS_GNUCC)
-  add_compile_options(-fprofile-arcs -ftest-coverage)
+if (${ENABLE_COVERAGE})
+  add_compile_options(-g -O0 -fprofile-arcs -ftest-coverage)
 endif ()
 
 add_subdirectory(cpp-frp)

@@ -22,7 +22,7 @@ set(SOURCES
 
 add_executable(frp-test ${INCLUDES} ${SOURCES})
 target_link_libraries(frp-test gtest gtest_main)
-if (CMAKE_COMPILER_IS_GNUCC)
+if (${ENABLE_COVERAGE})
   target_link_libraries(frp-test -fprofile-arcs -ftest-coverage)
 endif ()
 
