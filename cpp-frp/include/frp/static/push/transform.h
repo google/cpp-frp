@@ -1,9 +1,10 @@
-#ifndef _FRP_PUSH_TRANSFORM_H_
-#define _FRP_PUSH_TRANSFORM_H_
+#ifndef _FRP_STATIC_PUSH_TRANSFORM_H_
+#define _FRP_STATIC_PUSH_TRANSFORM_H_
 
-#include <frp/push/repository.h>
+#include <frp/static/push/repository.h>
 
 namespace frp {
+namespace stat {
 namespace push {
 
 template<typename Comparator, typename Function, typename... Dependencies>
@@ -34,6 +35,7 @@ auto transform(Function &&function, Dependencies... dependencies) {
 }
 
 } // namespace push
+} // namespace stat
 } // namespace frp
 
-#endif // _FRP_PUSH_TRANSFORM_H_
+#endif // _FRP_STATIC_PUSH_TRANSFORM_H_

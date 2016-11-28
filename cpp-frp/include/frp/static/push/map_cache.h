@@ -1,13 +1,14 @@
-#ifndef _FRP_PUSH_MAP_CACHE_H_
-#define _FRP_PUSH_MAP_CACHE_H_
+#ifndef _FRP_STATIC_PUSH_MAP_CACHE_H_
+#define _FRP_STATIC_PUSH_MAP_CACHE_H_
 
-#include <frp/push/repository.h>
+#include <frp/static/push/repository.h>
 #include <frp/util/collector.h>
 #include <frp/vector_view.h>
 #include <unordered_map>
 #include <vector>
 
 namespace frp {
+namespace stat {
 namespace push {
 namespace details {
 
@@ -99,6 +100,7 @@ auto map_cache(Function &&function, Dependency dependency) {
 }
 
 } // namespace push
+} // namespace stat
 } // namespace frp
 
-#endif // _FRP_PUSH_MAP_CACHE_H_
+#endif // _FRP_STATIC_PUSH_MAP_CACHE_H_

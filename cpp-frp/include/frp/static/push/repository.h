@@ -1,5 +1,5 @@
-#ifndef _FRP_PUSH_REPOSITORY_H_
-#define _FRP_PUSH_REPOSITORY_H_
+#ifndef _FRP_STATIC_PUSH_REPOSITORY_H_
+#define _FRP_STATIC_PUSH_REPOSITORY_H_
 
 #include <frp/execute_on.h>
 #include <frp/internal/operator.h>
@@ -12,6 +12,7 @@
 #include <frp/util/vector.h>
 
 namespace frp {
+namespace stat {
 namespace push {
 namespace details {
 
@@ -129,6 +130,7 @@ auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
 } // namespace details
 
 } // namespace push
+} // namespace stat
 } // namespace frp
 
-#endif  // _FRP_PUSH_REPOSITORY_H_
+#endif  // _FRP_STATIC_PUSH_REPOSITORY_H_

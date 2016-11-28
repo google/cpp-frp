@@ -1,8 +1,8 @@
 #include <array_util.h>
-#include <frp/push/map.h>
-#include <frp/push/sink.h>
-#include <frp/push/source.h>
-#include <frp/push/transform.h>
+#include <frp/static/push/map.h>
+#include <frp/static/push/sink.h>
+#include <frp/static/push/source.h>
+#include <frp/static/push/transform.h>
 #include <future>
 #include <gtest/gtest.h>
 #include <string>
@@ -10,9 +10,9 @@
 #include <vector>
 
 TEST(map, test1) {
-	auto map(frp::push::map([](auto i) { return std::to_string(i); },
-		frp::push::transform([]() { return make_array(1, 2, 3, 4); })));
-	auto sink(frp::push::sink(frp::push::transform(
+	auto map(frp::stat::push::map([](auto i) { return std::to_string(i); },
+		frp::stat::push::transform([]() { return make_array(1, 2, 3, 4); })));
+	auto sink(frp::stat::push::sink(frp::stat::push::transform(
 		[&](const auto &values) { return values; }, std::ref(map))));
 	auto reference(*sink);
 	auto values(*reference);
@@ -22,10 +22,10 @@ TEST(map, test1) {
 }
 
 TEST(map, custom_comparator) {
-	auto source(frp::push::source(make_array(1, 3, 5)));
-	auto map(frp::push::map<odd_comparator_type>([](auto c) { return c; },
+	auto source(frp::stat::push::source(make_array(1, 3, 5)));
+	auto map(frp::stat::push::map<odd_comparator_type>([](auto c) { return c; },
 		std::ref(source)));
-	auto sink(frp::push::sink(std::ref(map)));
+	auto sink(frp::stat::push::sink(std::ref(map)));
 	auto reference1(*sink);
 	auto value1(*reference1);
 	ASSERT_EQ(value1[0], 1);
@@ -46,8 +46,8 @@ TEST(map, custom_comparator) {
 }
 
 TEST(map, movable_only) {
-	auto source(frp::push::source(make_array(1, 3, 5)));
-	frp::push::map<movable_odd_comparator_type>([](auto c) { return movable_type(c); },
+	auto source(frp::stat::push::source(make_array(1, 3, 5)));
+	frp::stat::push::map<movable_odd_comparator_type>([](auto c) { return movable_type(c); },
 		std::ref(source));
 	source = { 6, 7, 8 };
 }
@@ -56,6 +56,6 @@ TEST(map, references) {
 	auto f([](auto source) {
 		return source * source;
 	});
-	auto source(frp::push::transform([]() { return make_array(1, 3, 5, 7); }));
-	auto map(frp::push::map(std::cref(f), std::cref(source)));
+	auto source(frp::stat::push::transform([]() { return make_array(1, 3, 5, 7); }));
+	auto map(frp::stat::push::map(std::cref(f), std::cref(source)));
 }

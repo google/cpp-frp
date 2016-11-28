@@ -1,12 +1,12 @@
 #include <cmath>
-#include <frp/push/filter.h>
-#include <frp/push/map.h>
-#include <frp/push/sink.h>
-#include <frp/push/source.h>
-#include <frp/push/transform.h>
+#include <frp/static/push/filter.h>
+#include <frp/static/push/map.h>
+#include <frp/static/push/sink.h>
+#include <frp/static/push/source.h>
+#include <frp/static/push/transform.h>
 #include <gtest/gtest.h>
 
-using namespace frp::push;
+using namespace frp::stat::push;
 
 TEST(example, example1) {
 	auto base = source(5);

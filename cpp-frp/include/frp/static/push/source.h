@@ -1,5 +1,5 @@
-#ifndef _FRP_PUSH_SOURCE_H_
-#define _FRP_PUSH_SOURCE_H_
+#ifndef _FRP_STATIC_PUSH_SOURCE_H_
+#define _FRP_STATIC_PUSH_SOURCE_H_
 
 #include <frp/internal/operator.h>
 #include <frp/util/observable.h>
@@ -8,6 +8,7 @@
 #include <stdexcept>
 
 namespace frp {
+namespace stat {
 namespace push {
 
 template<typename T>
@@ -199,6 +200,7 @@ auto source(const T &value) {
 }
 
 } // namespace push
+} // namespace stat
 } // namespace frp
 
-#endif // _FRP_PUSH_SOURCE_H_
+#endif // _FRP_STATIC_PUSH_SOURCE_H_
