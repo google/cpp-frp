@@ -31,5 +31,9 @@ enable_testing()
 
 project (cpp-frp)
 
+if (CMAKE_COMPILER_IS_GNUCC)
+  add_compile_options(-fprofile-arcs -ftest-coverage)
+endif ()
+
 add_subdirectory(cpp-frp)
 add_subdirectory(test)
