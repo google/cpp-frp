@@ -24,6 +24,15 @@ TEST(transform, test_two_parents) {
 	ASSERT_EQ(*reference, -2);
 }
 
+template<typename... Args> inline void pass(Args&&...) {}
+
+TEST(transform, variadic_arguments) {
+	auto result(fsp::sink(fsp::transform(
+		[](auto argument, auto... arguments) { pass(argument += arguments...); return argument; },
+		fsp::source(5), fsp::source(3), fsp::source(4), fsp::source(8))));
+	ASSERT_EQ(**result, 5 + 3 + 4 + 8);
+}
+
 TEST(transform, test_two_children) {
 	auto top(frp::stat::push::transform([]() { return 2; }));
 	auto left(frp::stat::push::sink(
