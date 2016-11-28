@@ -1,6 +1,7 @@
 #ifndef _FRP_STATIC_PUSH_MAP_CACHE_H_
 #define _FRP_STATIC_PUSH_MAP_CACHE_H_
 
+#include <frp/internal/namespace_alias.h>
 #include <frp/static/push/repository.h>
 #include <frp/util/collector.h>
 #include <frp/vector_view.h>

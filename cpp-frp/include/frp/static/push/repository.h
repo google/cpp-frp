@@ -2,6 +2,7 @@
 #define _FRP_STATIC_PUSH_REPOSITORY_H_
 
 #include <frp/execute_on.h>
+#include <frp/internal/namespace_alias.h>
 #include <frp/internal/operator.h>
 #include <frp/util/function.h>
 #include <frp/util/observable.h>

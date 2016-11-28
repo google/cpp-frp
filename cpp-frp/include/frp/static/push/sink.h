@@ -1,6 +1,7 @@
 #ifndef _FRP_STATIC_PUSH_SINK_H_
 #define _FRP_STATIC_PUSH_SINK_H_
 
+#include <frp/internal/namespace_alias.h>
 #include <frp/internal/operator.h>
 #include <frp/util/observable.h>
 #include <frp/util/reference.h>
