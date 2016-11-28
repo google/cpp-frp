@@ -10,11 +10,14 @@ set(INCLUDES
 )
 
 set(SOURCES
+  "src/collector-test.cpp"
   "src/example-test.cpp"
   "src/filter-test.cpp"
+  "src/map_cache-test.cpp"
   "src/map-test.cpp"
   "src/source-sink-test.cpp"
   "src/transform-test.cpp"
+  "src/vector-test.cpp"
 )
 
 add_executable(frp-test ${INCLUDES} ${SOURCES})

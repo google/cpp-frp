@@ -5,7 +5,7 @@
 #include <gtest/gtest.h>
 #include <thread_pool.h>
 
-TEST(repo, test_one_parent) {
+TEST(transform, test_one_parent) {
 	auto squared(frp::push::transform([](int i) { return i * i; },
 		frp::push::transform([]() { return -1; })));
 	auto sink(frp::push::sink(std::ref(squared)));
@@ -13,7 +13,7 @@ TEST(repo, test_one_parent) {
 	ASSERT_EQ(*reference, 1);
 }
 
-TEST(repo, test_two_parents) {
+TEST(transform, test_two_parents) {
 	auto left(frp::push::transform([]() { return short(-1); }));
 	auto right(frp::push::transform([]() { return 2; }));
 
@@ -24,7 +24,7 @@ TEST(repo, test_two_parents) {
 	ASSERT_EQ(*reference, -2);
 }
 
-TEST(repo, test_two_children) {
+TEST(transform, test_two_children) {
 	auto top(frp::push::transform([]() { return 2; }));
 	auto left(frp::push::sink(frp::push::transform([](auto i) { return -1 * i; }, std::ref(top))));
 	auto right(frp::push::sink(frp::push::transform([](auto i) { return 2 * i; }, std::ref(top))));
@@ -34,7 +34,7 @@ TEST(repo, test_two_children) {
 	ASSERT_EQ(*right_reference, 4);
 }
 
-TEST(repo, test_diamond) {
+TEST(transform, test_diamond) {
 	auto top(frp::push::transform([]() { return 2; }));
 	auto bottom(frp::push::transform([](auto i, auto j) { return i * j; },
 		frp::push::transform([](auto i) { return 1 + i; }, std::ref(top)),
@@ -44,11 +44,11 @@ TEST(repo, test_diamond) {
 	ASSERT_EQ(*reference, 12);
 }
 
-TEST(repo, void_repository) {
+TEST(transform, void_transform) {
 	frp::push::transform([](auto i) {}, frp::push::transform([]() { return -1; }));
 }
 
-TEST(repo, shared_ptr) {
+TEST(transform, shared_ptr) {
 	auto source(std::make_shared<frp::push::source_type<int>>(frp::push::source(5)));
 
 	auto merge(frp::push::transform([](auto i, auto j) {},
@@ -56,20 +56,8 @@ TEST(repo, shared_ptr) {
 		frp::push::transform([](auto i) { return i; }, source)));
 }
 
-TEST(repo, unique_ptr) {
+TEST(transform, unique_ptr) {
 	auto sink(std::make_unique<frp::push::source_type<int>>(frp::push::source(5)));
-}
-
-TEST(repo, mutable_repository) {
-	auto top(frp::push::source(5));
-	auto left(frp::push::transform([](auto top) { return 3 * top; }, std::ref(top)));
-	auto right(frp::push::transform([](auto top) { return 2 * top; }, std::ref(top)));
-	auto sink(frp::push::sink(frp::push::transform(
-		[](auto a, auto b) { return std::make_pair(a, b); }, std::ref(left), std::ref(right))));
-	auto reference(*sink);
-	auto value(*reference);
-	ASSERT_EQ(value.first, 15);
-	ASSERT_EQ(value.second, 10);
 }
 
 struct A {
