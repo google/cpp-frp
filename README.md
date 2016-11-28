@@ -46,9 +46,23 @@ executor_type executor;
 
 auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider));
 ```
+##Build and installation instructions
+This is a header-only library. Just add ```cpp-frp/include``` as an include directory.
+Tested compilers include
+ - ```Visual Studio 2015```
+ - ```GCC 5, 6```
+Note that ```GCC 4``` is not supported.
 
-## Type requirements
-### Value types
+```cmake``` is used for building and running the tests.
+
+ - ```cmake -G``` to list the available generators.
+ - ```cmake .``` to set up projects.
+  * With Visual Studio, after execution, ```cpp-frp.sln``` can be found in the root directory.
+ - ```cmake --build .``` to set up and build the project.
+ - ```ctest -V .``` to run the tests.
+
+##Type requirements
+###Value types
 The requirements for value types are as follows:
 
  - Must be *move constructible*
@@ -59,19 +73,19 @@ The requirements for value types are as follows:
 
 The *comparator* is used to suppress redundant updates while traversing the graph.
 
-### Function types
+###Function types
 Functions must implement the ```operator()``` with the argument types relevant. Lambda expressions with ```auto``` type deductions are allowed as seen above. ```std::bind```, function pointers etc works as well.
 
 Functions can return ```void``` for ```transform```, the function will be executed on any dependency changes but the resulting repository becomes a leaf-node and can not be used by any other repository.
 
-#### Thread safety
+####Thread safety
 Functions are expected to have **no side-effects** and only operate on their input arguments. That said, in order to interface with other code that might be a too strict requirement. This library uses atomics to synchronize logic, which means that in theory, at any point, there might be multiple invocations of your function running in parallell. The values returned by functions are guaranteed to arrive in the correct order, the invocation of functions are not.
 
 There are two ways to manage functions with side effects:
  - Specify a single threaded executor with ```execute_on(...)```. This way the execution of your function will be serialized.
  - Use atomics or locks to protect your data. This way you can write thread-safe code while still leveraging multi-thread performance.
 
-### Executor types
+###Executor types
 Executor types must have a signature equivalent to:
 ```C++
 template<typename F>
@@ -80,19 +94,19 @@ auto operator()(F &&f);
 
 The executor is expected to call the ```operator()``` of the given instance with no arguments.
 
-### Notes on the "diamond problem"
+###Notes on the "diamond problem"
 
 ####Example layout
 ```
-   (A)
+   [A]
   /   \
-(B)   (C)
+[B]   [C]
   \   /
-   (D)
+   [D]
   /   \
-(E)   (F)
+[E]   [F]
   \   /
-   (G)
+   [G]
 ```
 ####Problem description
 
