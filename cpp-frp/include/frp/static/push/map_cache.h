@@ -17,6 +17,8 @@ template<typename K, typename V, typename Container, typename Hash>
 struct map_cache_commit_storage_type : util::commit_storage_type<Container, 1> {
 
 	typedef std::unordered_map<K, std::reference_wrapper<const V>, Hash> cache_type;
+	typedef frp::util::commit_storage_type<Container, 1ul> parent_type;
+	typedef typename parent_type::revisions_type revisions_type;
 	cache_type cache;
 
 	map_cache_commit_storage_type(Container &&value, util::revision_type revision,
