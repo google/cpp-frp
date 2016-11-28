@@ -2,7 +2,7 @@
 #define _FRP_PUSH_REPOSITORY_H_
 
 #include <frp/execute_on.h>
-#include <frp/push/internal/operator.h>
+#include <frp/internal/operator.h>
 #include <frp/util/function.h>
 #include <frp/util/observable.h>
 #include <frp/util/observe_all.h>
@@ -55,7 +55,7 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak
 	if (storage) {
 		util::invoke([&](const Dependencies&... dependencies) {
 			generate_attempt_commit(storage, observable, *generator, comparator,
-				details::get_storage(util::unwrap_container(dependencies))...);
+				internal::get_storage(util::unwrap_container(dependencies))...);
 		}, std::ref(*dependencies));
 	}
 }
@@ -75,7 +75,7 @@ struct repository_type {
 	template<typename O_, typename F_>
 	friend auto util::add_callback(O_ &observable, F_ &&f);
 	template<typename U>
-	friend auto details::get_storage(U &value);
+	friend auto internal::get_storage(U &value);
 
 	typedef T value_type;
 

@@ -1,7 +1,7 @@
 #ifndef _FRP_PUSH_SINK_H_
 #define _FRP_PUSH_SINK_H_
 
-#include <frp/push/internal/operator.h>
+#include <frp/internal/operator.h>
 #include <frp/util/observable.h>
 #include <frp/util/reference.h>
 #include <frp/util/storage.h>
@@ -70,7 +70,7 @@ private:
 		}
 
 		void evaluate() {
-			std::atomic_store(&value, details::get_storage(util::unwrap_container(dependency)));
+			std::atomic_store(&value, internal::get_storage(util::unwrap_container(dependency)));
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!

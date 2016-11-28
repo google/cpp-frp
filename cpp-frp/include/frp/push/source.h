@@ -1,7 +1,7 @@
 #ifndef _FRP_PUSH_SOURCE_H_
 #define _FRP_PUSH_SOURCE_H_
 
-#include <frp/push/internal/operator.h>
+#include <frp/internal/operator.h>
 #include <frp/util/observable.h>
 #include <frp/util/storage.h>
 #include <memory>
@@ -22,7 +22,7 @@ struct source_type {
 	template<typename O_, typename F_>
 	friend auto util::add_callback(O_ &observable, F_ &&f);
 	template<typename U>
-	friend auto details::get_storage(U &value);
+	friend auto internal::get_storage(U &value);
 
 	typedef T value_type;
 

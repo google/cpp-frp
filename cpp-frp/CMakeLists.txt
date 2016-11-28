@@ -1,7 +1,7 @@
 include_directories(include)
 
 set(FRP_INCLUDES
-  "include/frp/push/internal/operator.h"
+  "include/frp/internal/operator.h"
   "include/frp/push/filter.h"
   "include/frp/push/map.h"
   "include/frp/push/map_cache.h"
