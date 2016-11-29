@@ -87,6 +87,7 @@ private:
 	struct storage_type : util::observable_type {
 		virtual void accept(std::shared_ptr<util::storage_type<T>> &&) = 0;
 		virtual std::shared_ptr<util::storage_type<T>> get() const = 0;
+		virtual ~storage_type() {}
 	};
 
 	template<typename Comparator>
