@@ -28,11 +28,13 @@ void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
 		const std::shared_ptr<Commit> &commit) {
 	auto value(std::atomic_load(&*previous));
 	bool exchanged(false);
+	bool equals;
 	do {
 		commit->revision = (value ? value->revision : util::default_revision) + 1;
-	} while ((!value || (value->is_newer(revisions) && !commit->compare_value(*value, comparator)))
+		equals = value && commit->compare_value(*value, comparator);
+	} while ((!value || (value->is_newer(revisions)))
 		&& !(exchanged = std::atomic_compare_exchange_strong(&*previous, &value, commit)));
-	if (exchanged) {
+	if (exchanged && !equals) {
 		observable->update();
 	}
 }
