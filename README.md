@@ -51,6 +51,7 @@ This is a header-only library. Just add ```cpp-frp/include``` as an include dire
 Tested compilers include
  - ```Visual Studio 2015```
  - ```GCC 5, 6```
+ - ```clang 3.9```
 Note that ```GCC 4``` is not supported.
 
 ```cmake``` is used for building and running the tests.
