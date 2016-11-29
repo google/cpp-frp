@@ -60,6 +60,9 @@ Note that ```GCC 4``` is not supported.
   * With Visual Studio, after execution, ```cpp-frp.sln``` can be found in the root directory.
  - ```cmake --build .``` to set up and build the project.
  - ```ctest -V .``` to run the tests.
+ - ```cmake -DENABLE_COVERAGE:BOOL=true .``` to enable test coverage statistics. Available with ```GCC``` and ```clang```.
+  * ```./test-coverage.sh``` to generate test coverage statistics. Requires ```lcov```
+  * ```gnome-open test-coverage/index.html``` or equivalent to open the generated test coverage data.
 
 ##Type requirements
 ###Value types
