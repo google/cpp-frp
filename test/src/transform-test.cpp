@@ -56,7 +56,10 @@ TEST(transform, test_diamond) {
 }
 
 TEST(transform, void_transform) {
-	frp::stat::push::transform([](auto i) {}, frp::stat::push::transform([]() { return -1; }));
+	auto source(frp::stat::push::source(5));
+	auto transform(frp::stat::push::transform([](auto i) {},
+		frp::stat::push::transform([](auto input) { return 3 * input; }, std::ref(source))));
+	source = 6;
 }
 
 TEST(transform, shared_ptr) {

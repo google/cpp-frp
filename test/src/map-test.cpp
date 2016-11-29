@@ -12,13 +12,21 @@
 TEST(map, test1) {
 	auto map(frp::stat::push::map([](auto i) { return std::to_string(i); },
 		frp::stat::push::transform([]() { return make_array(1, 2, 3, 4); })));
-	auto sink(frp::stat::push::sink(frp::stat::push::transform(
-		[&](const auto &values) { return values; }, std::ref(map))));
+	auto sink(frp::stat::push::sink(std::ref(map)));
 	auto reference(*sink);
 	auto values(*reference);
 	ASSERT_EQ(values[0], "1");
 	ASSERT_EQ(values[1], "2");
 	ASSERT_EQ(values[2], "3");
+}
+
+TEST(map, empty_collection) {
+	auto map(frp::stat::push::map([](auto i) { return std::to_string(i); },
+		frp::stat::push::transform([]() { return make_array<int>(); })));
+	auto sink(frp::stat::push::sink(std::ref(map)));
+	auto reference(*sink);
+	auto values(*reference);
+	ASSERT_TRUE(values.empty());
 }
 
 TEST(map, custom_comparator) {

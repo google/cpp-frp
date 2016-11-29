@@ -11,6 +11,9 @@ struct make_array_type<T> {
 	static auto make(T &&value) {
 		return std::array<T, 1>{ std::forward<T>(value) };
 	}
+	static auto make() {
+		return std::array<T, 0>();
+	}
 };
 
 template<typename T, typename... Ts>
@@ -24,6 +27,11 @@ struct make_array_type<T, Ts...> {
 template<typename... Ts>
 auto make_array(Ts &&... values) {
 	return make_array_type<Ts...>::make(std::forward<Ts>(values)...);
+}
+
+template<typename T>
+auto make_array() {
+	return make_array_type<T>::make();
 }
 
 #endif // _ARRAY_UTIL_H_

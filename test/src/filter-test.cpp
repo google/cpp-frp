@@ -19,6 +19,16 @@ TEST(filter, test1) {
 	ASSERT_EQ(values[1], 4);
 }
 
+TEST(filter, empty_collection) {
+	auto filter(frp::stat::push::filter([](auto i) { return i > 2; },
+		frp::stat::push::transform([]() { return make_array<int>(); })));
+	auto sink(frp::stat::push::sink(std::ref(filter)));
+	auto reference(*sink);
+	auto values(*reference);
+	ASSERT_TRUE(values.empty());
+	ASSERT_EQ(values.size(), 0);
+}
+
 TEST(filter, custom_comparator) {
 	auto source(frp::stat::push::source(make_array(2, 4, 6, 8)));
 	auto filter(frp::stat::push::filter<odd_comparator_type>([](auto i) { return i > 2; },

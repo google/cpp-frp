@@ -21,6 +21,15 @@ TEST(map_cache, test1) {
 	ASSERT_EQ(values[3], "4");
 }
 
+TEST(map_cache, empty_collection) {
+	auto map(frp::stat::push::map_cache([](auto i) { return std::to_string(i); },
+		frp::stat::push::transform([]() { return make_array<int>(); })));
+	auto sink(frp::stat::push::sink(std::ref(map)));
+	auto reference(*sink);
+	auto values(*reference);
+	ASSERT_TRUE(values.empty());
+}
+
 TEST(map_cache, test_caching) {
 	auto source(frp::stat::push::source(make_array(1, 2, 3, 4)));
 	std::unordered_map<int, std::size_t> counter;
