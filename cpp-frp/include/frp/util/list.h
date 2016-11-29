@@ -51,14 +51,19 @@ struct single_list_type {
 		return iterator{ node };
 	}
 
-	bool erase(iterator &&iterator) {
-		auto &target(iterator.node);
-		if (std::atomic_compare_exchange_strong(&head, &target, target->next)) {
-			return true;
-		}
-		for (auto node = std::atomic_load(&head); node; node = std::atomic_load(&node->next)) {
-			if (std::atomic_compare_exchange_strong(&node->next, &target, target->next)) {
+	bool erase(const iterator &iterator) {
+		{
+			auto target(iterator.node);
+			if (std::atomic_compare_exchange_strong(&head, &target, target->next)) {
 				return true;
+			}
+		}
+		{
+			auto target(iterator.node);
+			for (auto node = std::atomic_load(&head); node; node = std::atomic_load(&node->next)) {
+				if (std::atomic_compare_exchange_strong(&node->next, &target, target->next)) {
+					return true;
+				}
 			}
 		}
 		return false;
