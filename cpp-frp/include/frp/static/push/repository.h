@@ -15,6 +15,10 @@
 namespace frp {
 namespace stat {
 namespace push {
+
+template<typename T>
+struct repository_type;
+
 namespace details {
 
 template<typename Commit, typename Comparator, typename Revisions>
@@ -64,7 +68,7 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak
 
 template<typename T, typename Storage, typename Comparator, typename Generator,
 	typename... Dependencies>
-auto make_repository(Generator &&generator, Dependencies &&... dependencies);
+repository_type<T> make_repository(Generator &&generator, Dependencies &&... dependencies);
 
 } // namespace details
 
@@ -73,11 +77,13 @@ struct repository_type {
 
 	template<typename U, typename Storage, typename Comparator, typename Generator,
 		typename... Dependencies>
-	friend auto details::make_repository(Generator &&generator, Dependencies &&... dependencies);
-	template<typename O_, typename F_>
-	friend auto util::add_callback(O_ &observable, F_ &&f);
+	friend repository_type<U> details::make_repository(Generator &&generator,
+		Dependencies &&... dependencies);
+	template<typename O, typename F>
+	friend auto util::add_callback(O &observable, F &&f)
+		->decltype(observable.add_callback(std::forward<F>(f)));
 	template<typename U>
-	friend auto internal::get_storage(U &value);
+	friend auto internal::get_storage(U &value)->decltype(value.get_storage());
 
 	typedef T value_type;
 
@@ -110,7 +116,7 @@ namespace details {
 
 template<typename T, typename Storage, typename Comparator, typename Generator,
 	typename... Dependencies>
-auto make_repository(Generator &&generator, Dependencies &&... dependencies) {
+repository_type<T> make_repository(Generator &&generator, Dependencies &&... dependencies) {
 	// TODO(gardell): Group storage together, there's an awful lot of shared_ptr instances!
 	// Note that storage should be kept separate, since its highly volatile.
 	auto storage(std::make_shared<std::shared_ptr<Storage>>());

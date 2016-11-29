@@ -12,19 +12,52 @@ namespace frp {
 namespace stat {
 namespace push {
 
+namespace details {
+
+template<typename T>
+struct source_type_requirements_type {
+
+	typedef std::decay_t<T> value_type;
+
+	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
+	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
+};
+
+template<typename T>
+struct source_type_equality_requirements_type : source_type_requirements_type<T> {
+
+	typedef std::decay_t<T> value_type;
+
+	static_assert(util::is_equality_comparable<value_type>::value,
+		"T must implement equality comparator");
+};
+
+} // namespace details
+
 template<typename T>
 struct source_type {
 
-	template<typename Comparator_, typename U>
-	friend auto source();
-	template<typename Comparator_, typename U>
-	friend auto source(U &&value);
-	template<typename Comparator_, typename U>
-	friend auto source(const U &value);
-	template<typename O_, typename F_>
-	friend auto util::add_callback(O_ &observable, F_ &&f);
+	template<typename Comparator, typename U>
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source();
+	template<typename Comparator, typename U>
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source(
+		U &&value);
+	template<typename Comparator, typename U>
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source(
+		const U &value);
 	template<typename U>
-	friend auto internal::get_storage(U &value);
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source();
+	template<typename U>
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source(
+		U &&value);
+	template<typename U>
+	friend source_type<typename details::source_type_requirements_type<U>::value_type> source(
+		const U &value);
+	template<typename O, typename F>
+	friend auto util::add_callback(O &observable, F &&f)
+		->decltype(observable.add_callback(std::forward<F>(f)));
+	template<typename U>
+	friend auto internal::get_storage(U &value)->decltype(value.get_storage());
 
 	typedef T value_type;
 
@@ -142,62 +175,40 @@ public:
 	}
 };
 
-namespace details {
-
-template<typename T>
-struct source_type_requirements_type {
-
-	typedef std::decay_t<T> value_type;
-
-	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
-	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
-};
-
-template<typename T>
-struct source_type_equality_requirements_type : source_type_requirements_type<T> {
-
-	typedef std::decay_t<T> value_type;
-
-	static_assert(util::is_equality_comparable<value_type>::value,
-		"T must implement equality comparator");
-};
-
-} // namespace details
-
 template<typename Comparator, typename T>
-auto source() {
-	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::template make<Comparator>();
+source_type<typename details::source_type_requirements_type<T>::value_type> source() {
+	return source_type<typename details::source_type_requirements_type<T>::value_type>
+		::template make<Comparator>();
 }
 
 template<typename Comparator, typename T>
-auto source(T &&value) {
-	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::template make<Comparator>(std::forward<T>(value));
+source_type<typename details::source_type_requirements_type<T>::value_type> source(T &&value) {
+	return source_type<typename details::source_type_requirements_type<T>::value_type>
+		::template make<Comparator>(std::forward<T>(value));
 }
 
 template<typename Comparator, typename T>
-auto source(const T &value) {
-	typedef typename details::source_type_requirements_type<T>::value_type value_type;
-	return source_type<value_type>::template make<Comparator>(value);
+source_type<typename details::source_type_requirements_type<T>::value_type> source(const T &value) {
+	return source_type<typename details::source_type_requirements_type<T>::value_type>
+		::template make<Comparator>(value);
 }
 
 template<typename T>
-auto source() {
-	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
-	return source<std::equal_to<value_type>, T>();
+source_type<typename details::source_type_requirements_type<T>::value_type> source() {
+	return source<std::equal_to<typename details::source_type_equality_requirements_type<T>
+		::value_type>, T>();
 }
 
 template<typename T>
-auto source(T &&value) {
-	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
-	return source<std::equal_to<value_type>, T>(std::forward<T>(value));
+source_type<typename details::source_type_requirements_type<T>::value_type> source(T &&value) {
+	return source<std::equal_to<typename details::source_type_equality_requirements_type<T>
+		::value_type>, T>(std::forward<T>(value));
 }
 
 template<typename T>
-auto source(const T &value) {
-	typedef typename details::source_type_equality_requirements_type<T>::value_type value_type;
-	return source<std::equal_to<value_type>, T>(value);
+source_type<typename details::source_type_requirements_type<T>::value_type> source(const T &value) {
+	return source<std::equal_to<typename details::source_type_equality_requirements_type<T>
+		::value_type>, T>(value);
 }
 
 } // namespace push

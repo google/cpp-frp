@@ -47,7 +47,7 @@ private:
 };
 
 template<typename O, typename F>
-auto add_callback(O &observable, F &&f) {
+auto add_callback(O &observable, F &&f)->decltype(observable.add_callback(std::forward<F>(f))) {
 	return observable.add_callback(std::forward<F>(f));
 }
 

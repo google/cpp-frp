@@ -5,7 +5,7 @@ namespace frp {
 namespace internal {
 
 template<typename T>
-auto get_storage(T &value) {
+auto get_storage(T &value)->decltype(value.get_storage()) {
 	return value.get_storage();
 }
 

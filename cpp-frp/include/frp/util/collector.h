@@ -30,7 +30,7 @@ template<typename T, typename Comparator = std::equal_to<T>,
 	typename Allocator = std::allocator<T>>
 struct fixed_size_collector_type {
 	template<typename U, typename Allocator_, typename Comparator_>
-	friend struct vector_view_type;
+	friend struct frp::vector_view_type;
 	template<typename U, typename Container_, typename Allocator_>
 	friend struct array_deleter_type;
 
@@ -80,7 +80,7 @@ template<typename T, typename Comparator = std::equal_to<T>,
 	typename Allocator = std::allocator<T>>
 struct append_collector_type {
 	template<typename U, typename Allocator_, typename Comparator_>
-	friend struct vector_view_type;
+	friend struct frp::vector_view_type;
 	template<typename U, typename Container_, typename Allocator_>
 	friend struct array_deleter_type;
 

@@ -81,9 +81,9 @@ protected:
 		, storage_size(copy.storage_size), capacity(copy.capacity) {}
 
 	vector_view_type_impl(const vector_view_type_impl &copy)
-		: storage(allocator.allocate(copy.storage_size), deleter_type{ *this })
+		: allocator(copy.allocator)
+		, storage(allocator.allocate(copy.storage_size), deleter_type{ *this })
 		, comparator(copy.comparator)
-		, allocator(copy.allocator)
 		, storage_size(copy.storage_size)
 		, capacity(copy.storage_size) {
 		for (size_type index = 0; index < storage_size; ++index) {
@@ -123,9 +123,9 @@ protected:
 		, storage_size(storage_size)
 		, capacity(capacity) {}
 
+	Allocator allocator;
 	storage_type storage;
 	Comparator comparator;
-	Allocator allocator;
 	size_type storage_size;
 	size_type capacity;
 };

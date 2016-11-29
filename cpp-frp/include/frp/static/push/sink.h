@@ -16,8 +16,9 @@ namespace push {
 template<typename T>
 struct sink_type {
 
-	template<typename Dependency_>
-	friend auto sink(Dependency_ &&dependency);
+	template<typename Dependency>
+	friend auto sink(Dependency &&dependency)
+		->sink_type<typename util::unwrap_reference_t<Dependency>::value_type>;
 
 	typedef T value_type;
 
@@ -72,7 +73,8 @@ private:
 		}
 
 		void evaluate() {
-			std::atomic_store(&value, internal::get_storage(util::unwrap_container(dependency)));
+			std::atomic_store(&value,
+				internal::get_storage(util::unwrap_container(dependency)));
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!
@@ -103,10 +105,12 @@ private:
 };
 
 template<typename Dependency>
-auto sink(Dependency &&dependency) {
+auto sink(Dependency &&dependency)
+		->sink_type<typename util::unwrap_reference_t<Dependency>::value_type> {
 	typedef typename util::unwrap_reference_t<Dependency>::value_type value_type;
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
-	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible.");
+	static_assert(std::is_move_constructible<value_type>::value,
+		"T must be move constructible.");
 	return sink_type<value_type>::make(std::forward<Dependency>(dependency));
 }
 
