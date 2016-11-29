@@ -5,6 +5,9 @@ googletest-src/
 cpp-frp/libcpp-frp.a
 test/frp-test
 
+test-coverage.info
+test-coverage/
+
 ## Cmake
 CMakeCache.txt
 CMakeFiles
