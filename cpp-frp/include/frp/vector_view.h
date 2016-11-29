@@ -14,6 +14,10 @@ struct vector_view_type_impl;
 template<typename T, typename Comparator, typename Allocator>
 struct vector_view_type_impl<T, Comparator, Allocator, false> {
 
+	template<typename U, typename Container_, typename Allocator_>
+	friend struct util::array_deleter_type;
+
+protected:
 	typedef util::array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, false>,
 		Allocator> deleter_type;
 	typedef std::unique_ptr<T[], deleter_type> storage_type;
@@ -57,6 +61,10 @@ struct vector_view_type_impl<T, Comparator, Allocator, false> {
 template<typename T, typename Comparator, typename Allocator>
 struct vector_view_type_impl<T, Comparator, Allocator, true> {
 
+	template<typename U, typename Container_, typename Allocator_>
+	friend struct util::array_deleter_type;
+
+protected:
 	typedef util::array_deleter_type<T, vector_view_type_impl<T, Comparator, Allocator, true>,
 		Allocator> deleter_type;
 	typedef std::unique_ptr<T[], deleter_type> storage_type;
@@ -142,7 +150,7 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 	typedef typename std::allocator_traits<Allocator>::pointer pointer;
 	typedef typename std::allocator_traits<Allocator>::const_pointer const_pointer;
 
-	struct iterator : std::iterator<std::random_access_iterator_tag, T> {
+	struct iterator : std::iterator<std::random_access_iterator_tag, const T> {
 		friend struct vector_view_type<T, Comparator, Allocator>;
 
 		auto operator+=(difference_type difference) {
@@ -160,7 +168,7 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 		}
 
 		auto operator-(difference_type difference) const {
-			return iterator(p + difference);
+			return iterator(p - difference);
 		}
 
 		difference_type operator-(const iterator &it) const {
@@ -255,11 +263,11 @@ struct vector_view_type : internal::vector_view_type_impl<T, Comparator, Allocat
 	}
 
 	auto rbegin() const {
-		return const_reverse_iterator(end() - 1);
+		return const_reverse_iterator(end());
 	}
 
 	auto rend() const {
-		return const_reverse_iterator(begin() - 1);
+		return const_reverse_iterator(begin());
 	}
 
 	auto size() const {
