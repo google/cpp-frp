@@ -79,3 +79,16 @@ TEST(map, references) {
 	auto source(frp::stat::push::transform([]() { return make_array(1, 3, 5, 7); }));
 	auto map(frp::stat::push::map(std::cref(f), std::cref(source)));
 }
+
+TEST(map, expanded_index) {
+	auto sink(frp::stat::push::sink(frp::stat::push::map<1, std::equal_to<int>>(
+		[](auto i, auto expanded, auto j) {
+			return expanded * expanded + i + j;
+		}, frp::stat::push::source(1), frp::stat::push::source(make_array(0, 1, 2, 3)),
+			frp::stat::push::source(3))));
+	auto reference(*sink);
+	ASSERT_TRUE(reference);
+	auto value(*reference);
+	auto expected(make_array(1 + 3, 1 + 1 + 3, 1 + 2 * 2 + 3, 1 + 3 * 3 + 3));
+	ASSERT_TRUE(std::equal(std::begin(value), std::end(value), std::begin(expected)));
+}
