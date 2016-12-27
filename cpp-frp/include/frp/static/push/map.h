@@ -31,7 +31,7 @@ auto map(Function &&function, Dependencies... dependencies) {
 		typename util::unwrap_container_t<Dependencies>::value_type>::type...>::value,
 		"Dependencies can not be void type.");
 
-	typedef util::indexed_map_return_t<I, Function, Dependencies...> value_type;
+	typedef util::map_return_t<I, Function, Dependencies...> value_type;
 	static_assert(!std::is_void<value_type>::value, "T must not be void type.");
 	static_assert(std::is_move_constructible<value_type>::value, "T must be move constructible");
 
@@ -48,9 +48,9 @@ auto map(Function &&function, Dependencies... dependencies) {
 		typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
 		typedef vector_view_type<value_type, Comparator> collector_view_type;
 
-		revisions_type revisions{ storage->revision... };
 		auto &expanded(std::get<I>(std::tie(storage...)));
 		if (expanded->value.empty()) {
+			revisions_type revisions{ storage->revision... };
 			callback(std::make_shared<commit_storage_type>(
 				collector_view_type(collector_type(0)), util::default_revision,
 				revisions));
@@ -76,7 +76,7 @@ auto map(Function &&function, Dependencies... dependencies) {
 
 template<std::size_t I, typename Function, typename... Dependencies>
 auto map(Function &&function, Dependencies... dependencies) {
-	typedef util::indexed_map_return_t<I, Function, Dependencies...> value_type;
+	typedef util::map_return_t<I, Function, Dependencies...> value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");
 	return map<I, std::equal_to<value_type>>(std::forward<Function>(function),

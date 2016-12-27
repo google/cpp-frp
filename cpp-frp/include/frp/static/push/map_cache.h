@@ -44,7 +44,7 @@ template<typename Comparator, typename Hash, typename Function, typename Depende
 auto map_cache(Function &&function, Dependency dependency) {
 	typedef typename util::unwrap_reference_t<Dependency>::value_type argument_container_type;
 	typedef typename argument_container_type::value_type argument_type;
-	typedef util::map_return_type<Function, Dependency> value_type;
+	typedef util::map_return_t<0, Function, Dependency> value_type;
 	static_assert(!std::is_void<argument_type>::value, "Dependency must not be void type.");
 	static_assert(std::is_copy_constructible<argument_type>::value,
 		"Dependency type must be copy constructible");
@@ -100,7 +100,7 @@ auto map_cache(Function &&function, Dependency dependency) {
 
 template<typename Hash, typename Function, typename Dependency>
 auto map_cache(Function &&function, Dependency dependency) {
-	typedef util::map_return_type<Function, Dependency> value_type;
+	typedef util::map_return_t<0, Function, Dependency> value_type;
 	static_assert(util::is_equality_comparable<value_type>::value,
 		"T must implement equality comparator");
 	return map_cache<std::equal_to<value_type>, Hash>(std::forward<Function>(function),

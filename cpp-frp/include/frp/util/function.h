@@ -38,10 +38,6 @@ template<typename F, typename... Ds>
 using transform_return_type = decltype(std::declval<const internal::get_function_t<F>>()(
 	std::declval<const typename util::unwrap_container_t<Ds>::value_type &>()...));
 
-template<typename F, typename... Ds>
-using map_return_type = decltype(std::declval<const internal::get_function_t<F>>()(
-	std::declval<const typename util::unwrap_container_t<Ds>::value_type::value_type &>()...));
-
 namespace details {
 
 template<std::size_t E, std::size_t N, std::size_t I, typename F, typename T, typename... Outputs>
@@ -60,12 +56,12 @@ struct unwrap_container_for_index<E, N, N, F, T, Outputs...> {
 } // namespace details
 
 template<std::size_t I, typename F, typename... Ds>
-struct indexed_map_return_type : details::unwrap_container_for_index<I, sizeof...(Ds), 0,
+struct map_return_type : details::unwrap_container_for_index<I, sizeof...(Ds), 0,
 	const internal::get_function_t<F>,
 	std::tuple<typename util::unwrap_container_t<Ds>::value_type...>> {};
 
 template<std::size_t I, typename F, typename... Ds>
-using indexed_map_return_t = typename indexed_map_return_type<I, F, Ds...>::type;
+using map_return_t = typename map_return_type<I, F, Ds...>::type;
 
 namespace details {
 

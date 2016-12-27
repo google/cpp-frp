@@ -67,3 +67,32 @@ TEST(filter, custom_comparator) {
 	ASSERT_EQ(values3[1], 6);
 	ASSERT_EQ(values3[2], 7);
 }
+
+TEST(filter, expanded_index) {
+	auto source(frp::stat::push::source(make_array(2, 4, 6, 8)));
+	auto filter(frp::stat::push::filter<1, odd_comparator_type>([](auto i, auto j, auto k) {
+			return i == 1 && j > 2 && k == 3;
+		},
+		frp::stat::push::source(1), std::ref(source), frp::stat::push::source(3)));
+	auto sink(frp::stat::push::sink(std::ref(filter)));
+	auto reference1(*sink);
+	auto values1(*reference1);
+	ASSERT_EQ(values1.size(), 3);
+	ASSERT_EQ(values1[0], 4);
+	ASSERT_EQ(values1[1], 6);
+	ASSERT_EQ(values1[2], 8);
+	source = make_array(2, 12, 14, 16);
+	auto reference2(*sink);
+	auto values2(*reference2);
+	ASSERT_EQ(values2.size(), 3);
+	ASSERT_EQ(values2[0], 4);
+	ASSERT_EQ(values2[1], 6);
+	ASSERT_EQ(values2[2], 8);
+	source = make_array(2, 4, 6, 7);
+	auto reference3(*sink);
+	auto values3(*reference3);
+	ASSERT_EQ(values3.size(), 3);
+	ASSERT_EQ(values3[0], 4);
+	ASSERT_EQ(values3[1], 6);
+	ASSERT_EQ(values3[2], 7);
+}
