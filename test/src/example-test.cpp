@@ -1,4 +1,4 @@
-/*
+﻿/*
  * Copyright 2016 Google Inc. All Rights Reserved.
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -51,4 +51,31 @@ TEST(example, example1) {
 	// changes will propagate through the graph where necessary.
 	base = 6;
 	exponent = 3;
+}
+
+TEST(example, example2) {
+	auto greeting(source<std::string>());
+	auto names(source<std::vector<std::string>>());
+	auto message(source<std::string>());
+	auto messages(sink(map<1>([](const auto &greeting, const auto &name,
+			const auto &message) {
+		std::stringstream ss;
+		ss << greeting << ' ' << name << ' ' << message;
+		return ss.str();
+	}, std::ref(greeting), std::ref(names), std::ref(message))));
+
+	greeting = "Hello";
+	names = { "Frodo", "Samwise", "Merry", "Pippin", "Aragorn", "Boromir", "Legolas",
+		"Gimli", "Gandalf" };
+	message = "of the Fellowship.";
+
+	for (const auto &value : **messages) {
+		std::cout << value << std::endl;
+	}
+
+	greeting = "Hallå";
+	message = "av ringens brödraskap.";
+	for (const auto &value : **messages) {
+		std::cout << value << std::endl;
+	}
 }

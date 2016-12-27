@@ -1,4 +1,4 @@
-# cpp-frp
+﻿# cpp-frp
 Static functional reactive programming in C++
 
 cpp-frp is a modern multi-threaded lock-free type-safe header-only library written in standard C++14.
@@ -45,6 +45,33 @@ The above example executes the lambda expressions on the current thread, to set 
 executor_type executor;
 
 auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider));
+```
+```map``` and ```filter``` also supports multiple dependencies and expansion of a specific dependency:
+```
+auto greeting(source<std::string>());
+auto names(source<std::vector<std::string>>());
+auto message(source<std::string>());
+auto messages(sink(map<1>([](const auto &greeting, const auto &name,
+		const auto &message) {
+	std::stringstream ss;
+	ss << greeting << ' ' << name << ' ' << message;
+	return ss.str();
+}, std::ref(greeting), std::ref(names), std::ref(message))));
+
+greeting = "Hello";
+names = { "Frodo", "Samwise", "Merry", "Pippin", "Aragorn", "Boromir", "Legolas",
+	"Gimli", "Gandalf" };
+message = "of the Fellowship.";
+
+for (const auto &value : **messages) {
+	std::cout << value << std::endl;
+}
+
+greeting = "Hallå";
+message = "av ringens brödraskap.";
+for (const auto &value : **messages) {
+	std::cout << value << std::endl;
+}
 ```
 ##Build and installation instructions
 This is a header-only library. Just add ```cpp-frp/include``` as an include directory.
