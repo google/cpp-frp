@@ -46,7 +46,7 @@ executor_type executor;
 
 auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider));
 ```
-```map``` and ```filter``` also supports multiple dependencies and expansion of a specific index:
+```map```, ```filter``` and ```map_cache``` also supports multiple dependencies and expansion of a specific index:
 ```C++
 auto greeting(source<std::string>());
 auto names(source<std::vector<std::string>>());
