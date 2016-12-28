@@ -47,7 +47,7 @@ executor_type executor;
 auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider));
 ```
 ```map``` and ```filter``` also supports multiple dependencies and expansion of a specific dependency:
-```
+```C++
 auto greeting(source<std::string>());
 auto names(source<std::vector<std::string>>());
 auto message(source<std::string>());
