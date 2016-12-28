@@ -14,10 +14,10 @@ auto squared = transform(
 	std::ref(base), std::ref(exponent));
 
 auto random_sequence = transform([](auto i) {
-	auto v = std::vector<int>(std::size_t(i));
-	std::generate(v.begin(), v.end(), std::rand);
-	return v;
-}, std::ref(squared));
+		auto v = std::vector<int>(std::size_t(i));
+		std::generate(v.begin(), v.end(), std::rand);
+		return v;
+	}, std::ref(squared));
 
 auto filtered = filter([](auto i) { return i % 2; }, std::ref(random_sequence));
 
@@ -51,16 +51,14 @@ auto receiver = transform(execute_on(executor, [](auto i){}), std::ref(provider)
 auto greeting(source<std::string>());
 auto names(source<std::vector<std::string>>());
 auto message(source<std::string>());
-auto messages(sink(map<1>([](const auto &greeting, const auto &name,
-		const auto &message) {
-	std::stringstream ss;
-	ss << greeting << ' ' << name << ' ' << message;
-	return ss.str();
-}, std::ref(greeting), std::ref(names), std::ref(message))));
+auto messages(sink(map<1>([](const auto &greeting, const auto &name, const auto &message) {
+		std::stringstream ss;
+		ss << greeting << ' ' << name << ' ' << message;
+		return ss.str();
+	}, std::ref(greeting), std::ref(names), std::ref(message))));
 
 greeting = "Hello";
-names = { "Frodo", "Samwise", "Merry", "Pippin", "Aragorn", "Boromir", "Legolas",
-	"Gimli", "Gandalf" };
+names = { "Frodo", "Samwise", "Merry", "Pippin", "Aragorn", "Boromir", "Legolas", "Gimli", "Gandalf" };
 message = "of the Fellowship.";
 
 for (const auto &value : **messages) {
