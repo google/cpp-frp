@@ -44,7 +44,7 @@ void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
 	do {
 		commit->revision = (value ? value->revision : util::default_revision) + 1;
 		equals = value && commit->compare_value(*value, comparator);
-	} while ((!value || (value->is_newer(revisions)))
+	} while ((!value || value->is_newer(revisions))
 		&& !(exchanged = std::atomic_compare_exchange_strong(&*previous, &value, commit)));
 	if (exchanged && !equals) {
 		observable->update();

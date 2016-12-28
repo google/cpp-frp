@@ -97,3 +97,60 @@ TEST(map_cache, references) {
 	auto source(frp::stat::push::transform([]() { return make_array(1, 3, 5, 7); }));
 	auto map(frp::stat::push::map_cache(std::cref(f), std::cref(source)));
 }
+
+TEST(map_cache, indexed_expand) {
+	auto sink(frp::stat::push::sink(frp::stat::push::map_cache<1>(
+		[](auto i, auto j, auto k) {
+			return i + j + k;
+		},
+		frp::stat::push::source(1), frp::stat::push::source(make_array(0, 1, 2, 3)),
+		frp::stat::push::source(3))));
+	auto value(**sink);
+	ASSERT_TRUE(std::equal(std::begin(value), std::end(value),
+		std::begin(make_array(4, 5, 6, 7))));
+}
+
+TEST(map_cache, indexed_expand_update_dependency) {
+	auto source1(frp::stat::push::source(1));
+	auto source2(frp::stat::push::source(make_array(0, 1, 2, 3)));
+	auto sink(frp::stat::push::sink(frp::stat::push::map_cache<1>(
+		[](auto i, auto j, auto k) {
+			return i + j + k;
+		},
+		std::ref(source1), std::ref(source2), frp::stat::push::source(3))));
+	auto value1(**sink);
+	ASSERT_TRUE(std::equal(std::begin(value1), std::end(value1),
+		std::begin(make_array(4, 5, 6, 7))));
+	source1 = 2;
+	auto value2(**sink);
+	ASSERT_TRUE(std::equal(std::begin(value2), std::end(value2),
+		std::begin(make_array(5, 6, 7, 8))));
+}
+
+TEST(map_cache, indexed_expand_update_dependency_and_invalidate_cache) {
+	auto source1(frp::stat::push::source(1));
+	auto source2(frp::stat::push::source(make_array(0, 1, 2, 3)));
+	auto sink(frp::stat::push::sink(
+		frp::stat::push::map_cache<1, odd_comparator_type, std::hash<int>>(
+			[](auto i, auto j, auto k) {
+				return i + j + k;
+			},
+			std::ref(source1), std::ref(source2), frp::stat::push::source(3))));
+	{
+		auto value(**sink);
+		ASSERT_TRUE(std::equal(std::begin(value), std::end(value),
+			std::begin(make_array(4, 5, 6, 7))));
+	}
+	source2 = make_array(10, 11, 12, 13);
+	{
+		auto value(**sink);
+		ASSERT_TRUE(std::equal(std::begin(value), std::end(value),
+			std::begin(make_array(4, 5, 6, 7))));
+	}
+	source1 = 2;
+	{
+		auto value(**sink);
+		ASSERT_TRUE(std::equal(std::begin(value), std::end(value),
+			std::begin(make_array(15, 16, 17, 18))));
+	}
+}

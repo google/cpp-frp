@@ -62,6 +62,47 @@ bool all_true(Ts &...ptrs) {
 	return !details::all_true_type<Ts...>::any_false(ptrs...);
 }
 
+namespace details {
+
+template<std::size_t E, std::size_t N, std::size_t I>
+struct tuple_le_except_index_impl_type {
+
+	template<typename T1, typename T2>
+	static constexpr bool le(T1 value1, T2 value2) {
+		return std::get<I>(value1) <= std::get<I>(value2)
+			? tuple_le_except_index_impl_type<E, N, I + 1>::le(
+				std::forward<T1>(value1), std::forward<T2>(value2)) : false;
+	}
+};
+
+template<std::size_t N, std::size_t I>
+struct tuple_le_except_index_impl_type<I, N, I> {
+
+	template<typename T1, typename T2>
+	static constexpr bool le(T1 value1, T2 value2) {
+		return tuple_le_except_index_impl_type<I, N, I + 1>::le(
+			std::forward<T1>(value1), std::forward<T2>(value2));
+	}
+};
+
+template<std::size_t E, std::size_t N>
+struct tuple_le_except_index_impl_type<E, N, N> {
+	template<typename T1, typename T2>
+	static constexpr bool le(T1 value1, T2 value2) {
+		return true;
+	}
+};
+
+} // namespace details
+
+template<std::size_t I, typename T1, typename T2>
+constexpr bool tuple_le_except_index(T1 value1, T2 value2) {
+	static_assert(std::tuple_size<T1>::value == std::tuple_size<T2>::value,
+		"tuples must be of equal size");
+	return details::tuple_le_except_index_impl_type<I, std::tuple_size<T1>::value, 0>
+		::le(std::forward<T1>(value1), std::forward<T2>(value2));
+}
+
 } // namespace util
 } // namespace frp
 
