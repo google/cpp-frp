@@ -50,7 +50,7 @@ struct unwrap_container_for_index<I, N, I, F, T, Outputs...>
 
 template<std::size_t E, std::size_t N, typename F, typename T, typename... Outputs>
 struct unwrap_container_for_index<E, N, N, F, T, Outputs...> {
-	typedef decltype(std::declval<F>()(std::declval<const typename Outputs &>()...)) type;
+	typedef decltype(std::declval<F>()(std::declval<const Outputs &>()...)) type;
 };
 
 } // namespace details
