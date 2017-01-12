@@ -29,6 +29,7 @@ set(SOURCES
   "src/map_cache-test.cpp"
   "src/map-test.cpp"
   "src/source-sink-test.cpp"
+  "src/threading-test.cpp"
   "src/transform-test.cpp"
   "src/vector-test.cpp"
 )

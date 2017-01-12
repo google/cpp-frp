@@ -115,12 +115,15 @@ private:
 		}
 
 		void accept(std::shared_ptr<util::storage_type<T>> &&replacement) override final {
+			bool changed(false);
 			auto current = get();
 			do {
 				replacement->revision = (current ? current->revision : util::default_revision) + 1;
 			} while ((!current || !current->compare_value(*replacement, comparator))
-				&& !std::atomic_compare_exchange_weak(&value, &current, replacement));
-			util::observable_type::update();
+				&& !(changed = std::atomic_compare_exchange_weak(&value, &current, replacement)));
+			if (changed) {
+				util::observable_type::update();
+			}
 		}
 
 		std::shared_ptr<util::storage_type<T>> value; // Use atomics!

@@ -33,36 +33,19 @@ struct repository_type;
 
 namespace details {
 
-template<typename Commit, typename Comparator, typename Revisions>
-void submit_commit(const std::shared_ptr<std::shared_ptr<Commit>> &previous,
+template<typename Storage, typename Comparator>
+void submit_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 		const std::shared_ptr<util::observable_type> &observable,
-		const Comparator &comparator, const Revisions &revisions,
-		const std::shared_ptr<Commit> &commit) {
-	auto value(std::atomic_load(&*previous));
-	bool exchanged(false);
-	bool equals;
+		const Comparator &comparator, const std::shared_ptr<Storage> &current) {
+	auto value(std::atomic_load(&*storage));
+	bool exchanged(false), equals;
 	do {
-		commit->revision = (value ? value->revision : util::default_revision) + 1;
-		equals = value && commit->compare_value(*value, comparator);
-	} while ((!value || value->is_newer(revisions))
-		&& !(exchanged = std::atomic_compare_exchange_strong(&*previous, &value, commit)));
+		current->revision = (value ? value->revision : util::default_revision) + 1;
+		equals = value && current->compare_value(*value, comparator);
+	} while ((!value || value->is_newer(current->revisions))
+		&& !(exchanged = std::atomic_compare_exchange_strong(&*storage, &value, current)));
 	if (exchanged && !equals) {
 		observable->update();
-	}
-}
-
-template<typename Storage, typename Generator, typename Comparator, typename... Ts>
-void generate_attempt_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
-	const std::shared_ptr<util::observable_type> &observable, Generator &generator,
-	Comparator &comparator, const std::shared_ptr<Ts> &... dependencies) {
-	if (util::all_true(dependencies...)) {
-		typedef std::array<util::revision_type, sizeof...(Ts)> revisions_type;
-		revisions_type revisions{ dependencies->revision... };
-		auto value(std::atomic_load(&*storage));
-		if (!value || value->is_newer(revisions)) {
-			generator(std::bind(&submit_commit<Storage, Comparator, revisions_type>, storage,
-				observable, comparator, revisions, std::placeholders::_1), value, dependencies...);
-		}
 	}
 }
 
@@ -73,10 +56,13 @@ void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak
 		const std::shared_ptr<std::tuple<Dependencies...>> &dependencies) {
 	auto storage(weak_storage.lock());
 	if (storage) {
-		util::invoke([&](const Dependencies&... dependencies) {
-			generate_attempt_commit(storage, observable, *generator, comparator,
-				internal::get_storage(util::unwrap_container(dependencies))...);
-		}, std::ref(*dependencies));
+		bool available(util::invoke([&](const Dependencies&... dependencies) {
+			return util::all_true(internal::get_storage(util::unwrap_container(dependencies))...);
+		}, *dependencies));
+		if (available) {
+			(*generator)(std::bind(&submit_commit<Storage, Comparator>, storage, observable,
+				comparator, std::placeholders::_1), storage, dependencies);
+		}
 	}
 }
 

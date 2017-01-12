@@ -61,52 +61,60 @@ auto map_cache(Function &&function, Dependencies... dependencies) {
 		Hash, sizeof...(Dependencies)> commit_storage_type;
 	typedef std::array<util::revision_type, sizeof...(Dependencies)> revisions_type;
 	return details::make_repository<collector_view_type, commit_storage_type,
-		std::equal_to<collector_view_type>>([
-			function = std::move(internal::get_function(function)),
-			executor = std::move(internal::get_executor(function))](
-				auto &&callback, const auto &previous, const auto &...storage) {
-			typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
-			typedef vector_view_type<value_type, Comparator> collector_view_type;
+			std::equal_to<collector_view_type>>([
+				function = std::move(internal::get_function(function)),
+				executor = std::move(internal::get_executor(function))](
+				auto &&callback, const auto &previous_storage, const auto &dependencies) {
+		typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
+		typedef vector_view_type<value_type, Comparator> collector_view_type;
 
-			auto &expanded(std::get<I>(std::tie(storage...)));
-			if (expanded->value.empty()) {
-				revisions_type revisions{ storage->revision... };
-				callback(std::make_shared<commit_storage_type>(
-					collector_view_type(collector_type(0)), util::default_revision, revisions));
-			} else {
-				auto collector(std::make_shared<collector_type>(expanded->value.size()));
-				std::size_t counter(0);
-				revisions_type revisions{ storage->revision... };
-				bool cache_usable(previous && frp::util::tuple_le_except_index<I>(
-					revisions, previous->revisions));
-				for (const auto &value : expanded->value) {
-					std::size_t index(counter++);
-					executor([function, collector, index, &value, callback, previous, revisions,
-							cache_usable, storage...]() {
-						typename commit_storage_type::cache_type::iterator it;
-						if (cache_usable && (it = previous->cache.find(value)) != previous->cache.end()
-							? collector->construct(index, it->second)
-							: collector->construct(index, util::indexed_invoke_with_replacement<I>(
-								std::move(function), std::cref(value),
-								std::tie(storage->value...)))) {
-							auto commit(std::make_shared<commit_storage_type>(
-								collector_view_type(std::move(*collector)),
-								util::default_revision, revisions));
-							auto &expanded(std::get<I>(std::tie(storage...)));
-							auto storage_it(std::begin(expanded->value));
-							auto commit_it(std::begin(commit->value));
-							for (;
-									storage_it != std::end(expanded->value)
-									&& commit_it != std::end(commit->value);
-									++storage_it, ++commit_it) {
-								commit->cache.emplace(*storage_it, std::ref(*commit_it));
-							}
-							callback(commit);
-						}
-					});
-				}
+		auto previous(std::atomic_load(&*previous_storage));
+		auto values(util::invoke([&](const auto&... dependency) {
+			return std::make_tuple(internal::get_storage(util::unwrap_container(dependency))...);
+		}, *dependencies));
+
+		auto revisions(util::invoke([&](const auto&... storage) {
+				return revisions_type{ storage->revision... };
+			}, values));
+		auto &collection(std::get<I>(values)->value);
+		if (collection.empty()) {
+			callback(std::make_shared<commit_storage_type>(
+				collector_view_type(collector_type(0)), util::default_revision,
+				revisions));
+		} else {
+			auto collector(std::make_shared<collector_type>(collection.size()));
+			std::size_t counter(0);
+			bool cache_usable(previous && frp::util::tuple_le_except_index<I>(
+				revisions, previous->revisions));
+			for (const auto &value : collection) {
+				std::size_t index(counter++);
+				executor([function, collector, index, &value, callback, previous, revisions,
+					cache_usable, values]() {
+					auto &collection(std::get<I>(values)->value);
+					auto values(util::invoke([&](const auto&... storage) {
+						return std::tie(storage->value...);
+					}, values));
+					typename commit_storage_type::cache_type::iterator it;
+					if (cache_usable && (it = previous->cache.find(value))
+						!= previous->cache.end() ? collector->construct(index, it->second)
+						: collector->construct(index,
+							util::indexed_invoke_with_replacement<I>(std::move(function),
+								std::cref(value), values))) {
+						auto commit(std::make_shared<commit_storage_type>(
+							collector_view_type(std::move(*collector)),
+							util::default_revision, revisions));
+						std::transform(std::begin(collection), std::end(collection),
+							std::begin(commit->value),
+							std::inserter(commit->cache, std::end(commit->cache)),
+							[](auto &key, auto &value) {
+								return std::make_pair(key, std::ref(value));
+							});
+						callback(commit);
+					}
+				});
 			}
-		}, std::forward<Dependencies>(dependencies)...);
+		}
+	}, std::forward<Dependencies>(dependencies)...);
 }
 
 template<std::size_t I, typename Hash, typename Function, typename... Dependencies>

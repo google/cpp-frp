@@ -13,82 +13,92 @@
 #ifndef _THREAD_POOL_H_
 #define _THREAD_POOL_H_
 
-#include <task_queue.h>
 #include <condition_variable>
-#include <functional>
-#include <future>
-#include <mutex>
 #include <queue>
 #include <thread>
+#include <vector>
 
 struct thread_pool {
+	typedef std::function<void()> task_type;
 private:
-	struct instance_type {
+	class instance_type {
 	public:
-		explicit instance_type(std::size_t num_threads)
-			: running(true), threads(num_threads) {
+		explicit instance_type(size_t num_threads) : threads(num_threads) {
+			running = true;
 			for (std::thread &thread : threads) {
 				thread = std::thread([this]() {
 					for (;;) {
-						std::unique_lock<std::mutex> lock(mutex);
-						cv.wait(lock, [this]() { return !running || !tasks.empty(); });
-						if (!running) {
-							break;
+						task_type task;
+						bool tasks_became_empty(false);
+						{
+							std::unique_lock<std::mutex> lk(tasks_mutex);
+							tasks_cv.wait(lk, [this] {
+								return !tasks.empty() || !running; });
+							if (!running) {
+								break;
+							}
+							if (tasks.empty()) {
+								continue;
+							}
+							task = std::move(tasks.front());
+							tasks.pop();
+							tasks_became_empty = tasks.empty();
 						}
-						tasks.process_one();
+						task();
+						if (tasks_became_empty) {
+							tasks_empty_cv.notify_all();
+						}
 					}
 				});
 			}
 		}
 
-		~instance_type() {
+		void operator()(task_type &&task) {
 			{
-				std::unique_lock<std::mutex> lock(mutex);
-				running = false;
+				std::unique_lock<std::mutex> lk(tasks_mutex);
+				tasks.push(std::forward<task_type>(task));
 			}
-			cv.notify_all();
+			tasks_cv.notify_one();
+		}
+
+		~instance_type() {
+			running = false;
+			tasks_cv.notify_all();
 			for (std::thread &thread : threads) {
-				thread.join();
+				if (thread.joinable()) {
+					thread.join();
+				}
 			}
 		}
 
-		template<typename Function, typename... Args>
-		auto operator() (Function function, Args... args) {
-			auto future(tasks(std::forward<Function>(function),
-				std::forward<Args>(args)...));
-			cv.notify_one();
-			return future;
-		}
-
-		std::size_t num_threads() const {
-			return threads.size();
+		void wait_idle() {
+			std::unique_lock<std::mutex> lk(tasks_mutex);
+			tasks_empty_cv.wait(lk, [this] { return tasks.empty() || !running; });
 		}
 
 	private:
-		bool running;
-		std::condition_variable cv;
-		std::mutex mutex;
-		task_queue tasks;
 		std::vector<std::thread> threads;
+		std::queue<task_type> tasks;
+		std::mutex tasks_mutex;
+		std::condition_variable tasks_cv, tasks_empty_cv;
+		volatile bool running;
 	};
 public:
-	explicit thread_pool(std::size_t num_threads)
+	explicit thread_pool(size_t num_threads)
 		: instance(new instance_type(num_threads)) {}
 
-	thread_pool() = delete;
-	thread_pool(thread_pool &&copy) = default;
+	thread_pool() = default;
 	thread_pool(const thread_pool &) = delete;
+	thread_pool &operator=(const thread_pool &) = delete;
+	thread_pool(thread_pool &&) = default;
 	thread_pool &operator=(thread_pool &&) = default;
-	thread_pool &operator=(const thread_pool &) = default;
 
-	template<typename Function, typename... Args>
-	auto operator() (Function function, Args... args) const {
-		return instance->operator()(std::forward<Function>(function),
-			std::forward<Args>(args)...);
+	void operator()(task_type &&task) const {
+		instance->operator()(std::forward<task_type>(task));
 	}
 
-	std::size_t num_threads() const {
-		return instance->num_threads();
+	void wait_idle() const {
+		instance->wait_idle();
 	}
 
 private:

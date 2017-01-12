@@ -13,7 +13,6 @@
 #include <frp/static/push/sink.h>
 #include <frp/static/push/source.h>
 #include <frp/static/push/transform.h>
-#include <future>
 #include <gtest/gtest.h>
 #include <thread_pool.h>
 

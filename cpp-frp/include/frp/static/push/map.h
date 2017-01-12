@@ -44,29 +44,37 @@ auto map(Function &&function, Dependencies... dependencies) {
 			std::equal_to<collector_view_type>>([
 				function = std::move(internal::get_function(function)),
 				executor = std::move(internal::get_executor(function))](
-				auto &&callback, const auto &previous, const auto &... storage) {
+				auto &&callback, const auto &previous, const auto &dependencies) {
 		typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
 		typedef vector_view_type<value_type, Comparator> collector_view_type;
 
-		auto &expanded(std::get<I>(std::tie(storage...)));
-		if (expanded->value.empty()) {
-			revisions_type revisions{ storage->revision... };
+		auto values(util::invoke([&](const auto&... dependency) {
+			return std::make_tuple(internal::get_storage(util::unwrap_container(dependency))...);
+		}, *dependencies));
+		auto revisions(util::invoke([&](const auto&... storage) {
+			return revisions_type{ storage->revision... };
+		}, values));
+		auto &collection(std::get<I>(values)->value);
+		if (collection.empty()) {
 			callback(std::make_shared<commit_storage_type>(
 				collector_view_type(collector_type(0)), util::default_revision,
 				revisions));
 		} else {
-			auto collector(std::make_shared<collector_type>(expanded->value.size()));
+			auto collector(std::make_shared<collector_type>(collection.size()));
 			std::size_t counter(0);
-			for (const auto &value : expanded->value) {
+			for (const auto &value : collection) {
 				std::size_t index(counter++);
-				executor([function, collector, index, &value, callback, storage...]() {
-					if (collector->construct(index,
+				executor([function, collector, index, &value, callback, values, revisions]() {
+					auto complete(collector->construct(index,
 						util::indexed_invoke_with_replacement<I>(std::move(function),
-							std::cref(value), std::tie(storage->value...)))) {
+							std::cref(value),
+							util::invoke([&](const auto&... values) {
+								return std::tie(values->value...);
+							}, values))));
+					if (complete) {
 						callback(std::make_shared<commit_storage_type>(
 							collector_view_type(std::move(*collector)),
-							util::default_revision,
-							revisions_type{ storage->revision... }));
+							util::default_revision, revisions));
 					}
 				});
 			}

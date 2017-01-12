@@ -28,14 +28,27 @@ auto transform(Function &&function, Dependencies... dependencies) {
 
 	typedef util::transform_return_type<Function, Dependencies...> value_type;
 	typedef util::commit_storage_type<value_type, sizeof...(Dependencies)> commit_storage_type;
+	typedef typename commit_storage_type::revisions_type revisions_type;
 
 	return details::make_repository<value_type, commit_storage_type, Comparator>(
 		[function = internal::get_function(util::unwrap_reference(std::forward<Function>(function))),
 		 executor = internal::get_executor(util::unwrap_reference(std::forward<Function>(function)))](
-			auto &&callback, const auto &, const auto &... storage) {
+			auto &&callback, const auto &previous, const auto &storage) {
 		executor([=, callback = std::move(callback)]() {
-			callback(commit_storage_type::make(std::bind(std::ref(function),
-				std::cref(storage->value)...), { storage->revision... }));
+			auto current(util::invoke([&](const auto&... storage) {
+				return std::make_tuple(internal::get_storage(util::unwrap_container(storage))...);
+			}, *storage));
+			auto revisions(util::invoke([&](const auto&... storage) {
+				return revisions_type{ storage->revision... };
+			}, current));
+			auto last(std::atomic_load(&*previous));
+			if (!last || last->is_newer(revisions)) {
+				callback(util::invoke([&](const auto&... storage) {
+					revisions_type revisions{ storage->revision... };
+					return commit_storage_type::make(std::bind(std::ref(function),
+						std::cref(storage->value)...), revisions);
+				}, current));
+			}
 		});
 	}, std::forward<Dependencies>(dependencies)...);
 }
