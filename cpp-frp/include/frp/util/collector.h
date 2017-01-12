@@ -17,6 +17,7 @@
 #include <atomic>
 #include <cassert>
 #include <frp/util/list.h>
+#include <functional>
 
 namespace frp {
 
