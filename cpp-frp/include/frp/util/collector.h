@@ -74,12 +74,6 @@ struct fixed_size_collector_type {
 		return storage_size;
 	}
 
-	~fixed_size_collector_type() {
-		if (storage) {
-			assert(storage_size == capacity);
-		}
-	}
-
 private:
 	typedef std::unique_ptr<T[], deleter_type> storage_type;
 	storage_type storage;
