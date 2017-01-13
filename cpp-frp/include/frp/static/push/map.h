@@ -42,8 +42,8 @@ auto map(Function &&function, Dependencies... dependencies) {
 
 	return details::make_repository<collector_view_type, commit_storage_type,
 			std::equal_to<collector_view_type>>([
-				function = std::move(internal::get_function(function)),
-				executor = std::move(internal::get_executor(function))](
+				function = internal::get_function(util::unwrap_reference(std::forward<Function>(function))),
+				executor = internal::get_executor(util::unwrap_reference(std::forward<Function>(function)))](
 				auto &&callback, const auto &previous, const auto &dependencies) {
 		typedef util::fixed_size_collector_type<value_type, Comparator> collector_type;
 		typedef vector_view_type<value_type, Comparator> collector_view_type;

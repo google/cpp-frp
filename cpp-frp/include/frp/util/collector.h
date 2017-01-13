@@ -67,7 +67,7 @@ struct fixed_size_collector_type {
 
 		std::allocator_traits<Allocator>::construct(allocator, &storage[index],
 			std::forward<Args>(args)...);
-		return storage_size == capacity;
+		return size == capacity;
 	}
 
 	std::size_t size() const {

@@ -10,11 +10,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <frp/static/push/map.h>
 #include <frp/static/push/sink.h>
 #include <frp/static/push/source.h>
 #include <frp/static/push/transform.h>
-#include <future>
 #include <gtest/gtest.h>
+#include <numeric>
 #include <thread_pool.h>
 
 template<typename T>
@@ -58,6 +59,45 @@ TEST(transform, single_thread_diamond) {
 
 	for (int i = 0; i < 1000; ++i) {
 		source = i;
+		std::this_thread::yield();
+	}
+	pool.wait_idle();
+}
+
+TEST(transform, multi_thread) {
+	auto source(fsp::source(0));
+	thread_pool pool(8);
+	auto top(fsp::transform(frp::execute_on(std::ref(pool),
+		require_incrementing_type<int>{-1}), std::ref(source)));
+	auto middle(fsp::transform(frp::execute_on(std::ref(pool),
+		require_incrementing_type<int>{-1}), std::ref(top)));
+	auto bottom(fsp::transform(frp::execute_on(std::ref(pool),
+		require_incrementing_type<int>{-1}), std::ref(middle)));
+
+	for (int i = 0; i < 1000; ++i) {
+		source = i;
+		std::this_thread::yield();
+	}
+	pool.wait_idle();
+}
+
+TEST(map, multi_thread) {
+	auto source(fsp::source<std::vector<int>>());
+	thread_pool pool(8);
+	auto mapped(fsp::map(frp::execute_on(std::ref(pool), [](auto source) {
+		return source * 2;
+	}), std::ref(source)));
+	auto transformed(fsp::transform(frp::execute_on(thread_pool(4), [](const auto &source) {
+		auto it(std::begin(source));
+		auto first(*it);
+		for (int i = 0; it != std::end(source); ++it, ++i) {
+			assert(*it == first + 2 * i);
+		}
+	}), std::ref(mapped)));
+	for (int i = 0; i < 1000; ++i) {
+		std::vector<int> range(5);
+		std::iota(std::begin(range), std::end(range), i);
+		source = std::move(range);
 		std::this_thread::yield();
 	}
 	pool.wait_idle();
