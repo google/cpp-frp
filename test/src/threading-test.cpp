@@ -35,7 +35,7 @@ struct require_incrementing_types {
 	auto operator()(T... value) const {
 		auto new_value(std::make_tuple(value...));
 		assert(new_value > this->value);
-		this->value = value;
+		this->value = new_value;
 		return new_value;
 	}
 
@@ -52,9 +52,10 @@ TEST(transform, single_thread_diamond) {
 	auto right(fsp::transform(frp::execute_on(std::ref(pool),
 		require_incrementing_type<int>{ -1 }), std::ref(top)));
 	auto bottom(fsp::transform(frp::execute_on(std::ref(pool),
-		require_incrementing_types<int, int>{ {-1, -1} }), std::ref(left), std::ref(right)));
+		require_incrementing_types<int, int>{ std::make_tuple(-1, -1) }), std::ref(left),
+		std::ref(right)));
 	auto tail(fsp::transform(frp::execute_on(std::ref(pool),
-		require_incrementing_type<std::tuple<int, int>>{ { -1, -1 } }), std::ref(bottom)));
+		require_incrementing_type<std::tuple<int, int>>{ std::make_tuple(-1, -1) }), std::ref(bottom)));
 
 	for (int i = 0; i < 1000; ++i) {
 		source = i;

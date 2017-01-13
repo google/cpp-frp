@@ -91,15 +91,14 @@ auto map_cache(Function &&function, Dependencies... dependencies) {
 				executor([function, collector, index, &value, callback, previous, revisions,
 					cache_usable, values]() {
 					auto &collection(std::get<I>(values)->value);
-					auto values(util::invoke([&](const auto&... storage) {
-						return std::tie(storage->value...);
-					}, values));
 					typename commit_storage_type::cache_type::iterator it;
 					if (cache_usable && (it = previous->cache.find(value))
 						!= previous->cache.end() ? collector->construct(index, it->second)
 						: collector->construct(index,
 							util::indexed_invoke_with_replacement<I>(std::move(function),
-								std::cref(value), values))) {
+								std::cref(value), util::invoke([&](const auto&... storage) {
+									return std::tie(storage->value...);
+								}, values)))) {
 						auto commit(std::make_shared<commit_storage_type>(
 							collector_view_type(std::move(*collector)),
 							util::default_revision, revisions));
