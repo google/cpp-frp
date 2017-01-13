@@ -43,7 +43,7 @@ struct all_true_type {};
 
 template<typename T, typename... Ts>
 struct all_true_type<T, Ts...> {
-	static bool any_false(T &ptr, Ts &...ptrs) {
+	static bool any_false(const T &ptr, const Ts&... ptrs) {
 		return !ptr || all_true_type<Ts...>::any_false(ptrs...);
 	}
 };
@@ -58,7 +58,7 @@ struct all_true_type<> {
 } // namespace details
 
 template<typename... Ts>
-bool all_true(Ts &...ptrs) {
+bool all_true(const Ts &...ptrs) {
 	return !details::all_true_type<Ts...>::any_false(ptrs...);
 }
 
