@@ -50,19 +50,16 @@ void submit_commit(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 }
 
 template<typename Storage, typename Generator, typename Comparator, typename... Dependencies>
-void attempt_commit_callback(const std::weak_ptr<std::shared_ptr<Storage>> &weak_storage,
+void attempt_commit_callback(const std::shared_ptr<std::shared_ptr<Storage>> &storage,
 		const std::shared_ptr<Generator> &generator, Comparator &comparator,
 		const std::shared_ptr<util::observable_type> &observable,
 		const std::shared_ptr<std::tuple<Dependencies...>> &dependencies) {
-	auto storage(weak_storage.lock());
-	if (storage) {
-		bool available(util::invoke([&](const Dependencies&... dependencies) {
-			return util::all_true(internal::get_storage(util::unwrap_container(dependencies))...);
-		}, *dependencies));
-		if (available) {
-			(*generator)(std::bind(&submit_commit<Storage, Comparator>, storage, observable,
-				comparator, std::placeholders::_1), storage, dependencies);
-		}
+	bool available(util::invoke([&](const Dependencies&... dependencies) {
+		return util::all_true(internal::get_storage(util::unwrap_container(dependencies))...);
+	}, *dependencies));
+	if (available) {
+		(*generator)(std::bind(&submit_commit<Storage, Comparator>, storage, observable,
+			comparator, std::placeholders::_1), storage, dependencies);
 	}
 }
 
@@ -125,9 +122,8 @@ repository_type<T> make_repository(Generator &&generator, Dependencies &&... dep
 		std::forward<Dependencies>(dependencies)...));
 	auto callback(std::bind(
 		&attempt_commit_callback<Storage, Generator, Comparator, Dependencies...>,
-		std::weak_ptr<std::shared_ptr<Storage>>(storage),
-		std::make_shared<Generator>(std::forward<Generator>(generator)), Comparator(), observable,
-		shared_dependencies));
+		storage, std::make_shared<Generator>(std::forward<Generator>(generator)), Comparator(),
+		observable, shared_dependencies));
 	auto provider([=]() { return std::atomic_load(&*storage); });
 	repository_type<T> repository(observable, callback, provider, shared_dependencies);
 	callback();
