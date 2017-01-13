@@ -37,8 +37,8 @@ auto filter(Function &&function, Dependencies&&... dependencies) {
 	typedef std::array<util::revision_type, sizeof...(Dependencies)> revisions_type;
 	return details::make_repository<collector_view_type, commit_storage_type,
 		std::equal_to<collector_view_type>>([
-			function = std::move(internal::get_function(function)),
-			executor = std::move(internal::get_executor(function))](
+			function = internal::get_function(util::unwrap_reference(std::forward<Function>(function))),
+			executor = internal::get_executor(util::unwrap_reference(std::forward<Function>(function)))](
 				auto &&callback, const auto &, const auto &dependencies) {
 			typedef util::append_collector_type<value_type, Comparator> collector_type;
 

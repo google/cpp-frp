@@ -10,6 +10,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+#include <frp/static/push/filter.h>
 #include <frp/static/push/map.h>
 #include <frp/static/push/map_cache.h>
 #include <frp/static/push/sink.h>
@@ -112,6 +113,25 @@ TEST(map_cache, multi_thread) {
 	}), std::ref(source)));
 	auto map_cached(fsp::map(frp::execute_on(std::ref(pool), require_incrementing_type<int>{-1}),
 		std::ref(mapped)));
+	for (int i = 0; i < 1000; ++i) {
+		std::vector<int> range(5);
+		std::iota(std::begin(range), std::end(range), i);
+		source = std::move(range);
+		std::this_thread::yield();
+	}
+	pool.wait_idle();
+}
+
+TEST(filter, multi_thread) {
+	auto source(fsp::source<std::vector<int>>());
+	thread_pool pool(8);
+	auto filtered(fsp::filter(frp::execute_on(std::ref(pool), [](auto source) {
+		return source % 2;
+	}), std::ref(source)));
+	auto mapped(fsp::map(frp::execute_on(std::ref(pool), [](auto source) {
+		assert(source % 2);
+		return source;
+	}), std::ref(filtered)));
 	for (int i = 0; i < 1000; ++i) {
 		std::vector<int> range(5);
 		std::iota(std::begin(range), std::end(range), i);
