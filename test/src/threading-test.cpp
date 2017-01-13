@@ -11,6 +11,7 @@
  * limitations under the License.
  */
 #include <frp/static/push/map.h>
+#include <frp/static/push/map_cache.h>
 #include <frp/static/push/sink.h>
 #include <frp/static/push/source.h>
 #include <frp/static/push/transform.h>
@@ -94,6 +95,23 @@ TEST(map, multi_thread) {
 			assert(*it == first + 2 * i);
 		}
 	}), std::ref(mapped)));
+	for (int i = 0; i < 1000; ++i) {
+		std::vector<int> range(5);
+		std::iota(std::begin(range), std::end(range), i);
+		source = std::move(range);
+		std::this_thread::yield();
+	}
+	pool.wait_idle();
+}
+
+TEST(map_cache, multi_thread) {
+	auto source(fsp::source<std::vector<int>>());
+	thread_pool pool(8);
+	auto mapped(fsp::map(frp::execute_on(std::ref(pool), [](auto source) {
+		return source - source % 2;
+	}), std::ref(source)));
+	auto map_cached(fsp::map(frp::execute_on(std::ref(pool), require_incrementing_type<int>{-1}),
+		std::ref(mapped)));
 	for (int i = 0; i < 1000; ++i) {
 		std::vector<int> range(5);
 		std::iota(std::begin(range), std::end(range), i);
